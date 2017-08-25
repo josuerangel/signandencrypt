@@ -6,6 +6,7 @@ import {SignedData, EncapsulatedContentInfo} from 'pkijs';
 import {ContentInfo} from 'pkijs';
 import {EnvelopedData, SafeContents} from 'pkijs';
 import forge from 'node-forge';
+import Message from '../Message.jsx';
 
 class Box extends React.Component {
   constructor(props) {
@@ -16,9 +17,12 @@ class Box extends React.Component {
     this.publicKey2;
     this.privateKey2;
     this.messageForDecrypt;
+    this.messageForEncryptUnit8Array;
     this.inputPublicKey1;
     this.inputPrivateKey1;
+    this.fileForDecrypt;
     this.dataFileForDecrypt = {};
+    this.dataFileForEncrypt = {};
     this.openpgp = require('openpgp');
     this.state = {
       passPhrase: '12345678a',
@@ -93,16 +97,36 @@ class Box extends React.Component {
   handleEncrypt(e) {
     console.log('publicKey1: ', this.publicKey1);
 
-    const options = {
-      data: 'Hello, World!', // input as String (or Uint8Array)
+    let options = {
+      data: this.messageForEncryptUnit8Array, // input as String (or Uint8Array)
       publicKeys: this.publicKey1, // for encryption
       //privateKeys: privKeyObj // for signing (optional)
     };
 
     this.openpgp.encrypt(options).then((ciphertext) => {
+      console.log('encrypted: ', ciphertext);
       let encrypted = ciphertext.data; // '-----BEGIN PGP MESSAGE ... END PGP MESSAGE-----'
       this.messageForDecrypt = this.openpgp.message.readArmored(encrypted);
-      console.log('encrypted: ', this.messageForDecrypt);
+      console.log('encrypted armor: ', this.messageForDecrypt);
+
+      options.data = encrypted;
+      options.publicKeys = this.publicKey2;
+
+      this.openpgp.encrypt(options).then((ciphertext) => {
+        console.log('second encrypt: ', ciphertext);
+        let encrypted2 = ciphertext.data;
+
+        const typeFile = mime.lookup(this.dataFileForEncrypt.name);
+        console.log('typeFile: ', typeFile);
+        this.dataFileForEncrypt.type = typeFile;
+
+        let blobfile = new Blob([ciphertext.data], {type: typeFile});
+        console.log('blob: ', blobfile);
+
+        let FileSaver = require('file-saver');
+        FileSaver.saveAs(blobfile, this.dataFileForEncrypt.name + ".cfei");
+      });
+
     });
   }
 
@@ -160,48 +184,11 @@ class Box extends React.Component {
             FileSaver.saveAs(blobfile, this.dataFileForDecrypt.name);
           } else {
             console.log('inside national');
-            //region Decode existing CMS Signed Data
-            //const asn1 = asn1js.fromBER(plaintext.data.buffer);
-            //console.log('asn1: ', asn1);
-            // const cmsContentSimpl = new ContentInfo({ schema: asn1.result });
-            // console.log("cmsContentSimpl: ", cmsContentSimpl);
-            // const cmsSignedSimpl = new SignedData({ schema: cmsContentSimpl.content });
-            // console.log("cmsSignedSimpl: ", cmsSignedSimpl);
-
-            //let FileSaver = require('file-saver');
-            //FileSaver.saveAs(blobfile, this.dataFileForDecrypt.name);
             let file = new File([plaintext.data], this.dataFileForDecrypt.name, {type: typeFile});
             console.log('file: ', file);
             const reader = new FileReader();
             reader.onload = (event) => this.parseFile(event.target.result);
             reader.readAsArrayBuffer(file);
-
-            //
-            // const asn1 = asn1js.fromBER(plaintext.data.buffer);
-            // console.log('asn1: ', asn1);
-            // const cmsContentSimpl = new ContentInfo({ schema: asn1.result });
-            // console.log("cmsContentSimpl: ", cmsContentSimpl);
-            // const cmsSignedSimpl = new SignedData({ schema: cmsContentSimpl.content });
-            // console.log("cmsSignedSimpl: ", cmsSignedSimpl);
-            //
-            // const cmsEncapsulatedSimpl = new EncapsulatedContentInfo(cmsSignedSimpl.encapContentInfo);
-            // console.log('cmsEncapsulatedSimpl: ', cmsEncapsulatedSimpl);
-            // //const _schema = cmsEncapsulatedSimpl.toSchema();
-            // //console.log('_schema: ', _schema);
-            //
-            // let offset = 0;
-            // //const bytesContent = new Uint8Array(cmsEncapsulatedSimpl.eContent.valueBlock.valueHex, offset, ((offset + 65536) > cmsEncapsulatedSimpl.eContent.valueBlock.valueHex.byteLength) ? (cmsEncapsulatedSimpl.eContent.valueBlock.valueHex.byteLength - offset) : 65536);
-            // //const bytesContent = new Uint8Array(cmsEncapsulatedSimpl.eContent.valueBlock.valueHex, offset, ((offset + 65536) > cmsEncapsulatedSimpl.eContent.valueBlock.valueHex.byteLength) ? (cmsEncapsulatedSimpl.eContent.valueBlock.valueHex.byteLength - offset) : 65536);
-            // const bytesContent = new Uint8Array(cmsEncapsulatedSimpl.eContent.valueBlock.value[0].valueBlock.valueHex, offset, ((offset + 65536) > cmsEncapsulatedSimpl.eContent.valueBlock.value[0].valueBlock.valueHex.byteLength) ? (cmsEncapsulatedSimpl.eContent.valueBlock.value[0].valueBlock.valueHex.byteLength - offset) : 65536);
-            // console.log('bytesContent: ', bytesContent);
-            //
-            // blobfile = new Blob([bytesContent], {type: typeFile});
-            // //let blobfile = new Blob([bytesContent], {type: "text/plain;charset=utf-8"});
-            // console.log('blob: ', blobfile);
-            //
-            // //let FileSaver = require('file-saver');
-            // //FileSaver.saveAs(blobfile, this.dataFileForDecrypt.name);
-
           }
         });
       }
@@ -209,12 +196,48 @@ class Box extends React.Component {
   }
 
   handleFileForDecrypt(e) {
-    let file = e.target.files[0];
-    const reader = new FileReader();
-    reader.onload = (event) => this.loadFileForDecrypt(event.target.result);
-    reader.readAsArrayBuffer(file);
-    //reader.readAsBinaryString(file);
-    this.setDataFileForDecrypt(file.name);
+    this.fileForDecrypt = e.target.files[0];
+    const readFile = Message.readFile(this.fileForDecrypt);
+    //const readFile = this.setFileForDecrypt(this.fileForDecrypt);
+    readFile.then((result) => {
+      console.log('resolve: ', result);
+    }, (err) => {
+      console.log('reject: ', err);
+    });
+    // const reader = new FileReader();
+    // reader.onload = (event) => this.loadFileForDecrypt(event.target.result);
+          //reader.readAsText(file);
+    // reader.readAsArrayBuffer(this.fileForDecrypt);
+          //reader.readAsBinaryString(file);
+    this.setDataFileForDecrypt(this.fileForDecrypt.name);
+  }
+
+  setFileForDecrypt(file){
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        let data = event.target.result;
+        try{
+          this.messageForDecrypt = this.openpgp.message.readArmored(data);
+          resolve('loaded armored file for decrypt');
+        }
+        catch(e){
+          reader.onload = (event) => {
+            data = event.target.result;
+            try {
+              const bytes = new Uint8Array(data);
+              this.messageForDecrypt = this.openpgp.message.read(bytes);
+              resolve('loaded binary file for decrypt');
+            }
+            catch (e) {
+              reject(Error('File for decrypt is not valid: ' + e));
+            }
+          };
+          reader.readAsArrayBuffer(this.fileForDecrypt);
+        }
+      };
+      reader.readAsText(file);
+    });
   }
 
   setDataFileForDecrypt(name) {
@@ -227,17 +250,36 @@ class Box extends React.Component {
     this.dataFileForDecrypt.encryptExtension = EncryptExtension;
   }
 
+  setDataFileForEncrypt(name) {
+    this.dataFileForEncrypt.name = name;
+  }
+
   loadFileForDecrypt(data) {
     console.log('raw: ', data);
-    const bytes = new Uint8Array(data);
-    console.log('file after Unit8Array: ', bytes);
+
+    try {
+      const bytes = new Uint8Array(data);
+      console.log('file after Unit8Array: ', bytes);
+      this.messageForDecrypt = this.openpgp.message.read(bytes);
+    } catch (e) {
+      console.log('is not binary', e);
+      this.messageForDecrypt = this.openpgp.message.readArmored(data);
+    }
+
+    // const base64String = this.base64ArrayBuffer(data);
+    // console.log('base64String: ', base64String);
+
     //data = this.openpgp.armor.encode(this.openpgp.enums.armor.message, bytes);
     //this.messageForDecrypt = data;
     //let encryptedMessage = this.openpgp.message.readArmored(data);
     //console.log(encryptedMessage);
     //this.messageForDecrypt = encryptedMessage;
 
-    this.messageForDecrypt = this.openpgp.message.read(bytes);
+    // this is ok for decryp binary
+
+
+    //this.messageForDecrypt = this.openpgp.message.readArmored(base64String);
+    console.log('message readed');
     //this.messageForDecrypt = this.openpgp.message.fromBinary(bytes, 'unoPrueba.txt.cfei');
   }
 
@@ -316,6 +358,29 @@ class Box extends React.Component {
     // console.log('p7: ', p7);
   }
 
+  handleFileForEncrypt(e){
+    let file = e.target.files[0];
+    const reader = new FileReader();
+    reader.onload = (event) => this.parseFileForEncrypt(event.target.result);
+    reader.readAsArrayBuffer(file);
+    this.setDataFileForEncrypt(file.name);
+  }
+
+  parseFileForEncrypt(data){
+    console.log('parseFileForEncrypt raw: ', data);
+    const bytes = new Uint8Array(data);
+    console.log('after Unit8Array: ', bytes);
+    this.messageForEncryptUnit8Array = bytes;
+  }
+
+  handleFileForDecryptText(e){
+    let file = e.target.files[0];
+    const reader = new FileReader();
+    reader.onload = (event) => this.loadFileForDecrypt(event.target.result);
+    reader.readAsText(file);
+    this.setDataFileForDecrypt(file.name);
+  }
+
   render() {
     return (
       <div>
@@ -344,7 +409,17 @@ class Box extends React.Component {
         <br></br>
         <label>
           encrypt file
+          <input type="file" onChange={this.handleFileForEncrypt.bind(this)}></input>
+        </label>
+        <br></br>
+        <label>
+          decrypt file binary
           <input type="file" onChange={this.handleFileForDecrypt.bind(this)}></input>
+        </label>
+        <br></br>
+        <label>
+          decrypt file text
+          <input type="file" onChange={this.handleFileForDecryptText.bind(this)}></input>
         </label>
         <br></br>
         <label>
