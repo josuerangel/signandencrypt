@@ -2,11 +2,16 @@ import React from 'react';
 import {createWriteStream, supported, version} from 'StreamSaver';
 import mime from 'mime-types';
 import * as asn1js from "asn1js";
-import {Certificate, SignedData, SignerInfo, IssuerAndSerialNumber, EncapsulatedContentInfo} from 'pkijs';
-import {ContentInfo, PrivateKeyInfo} from 'pkijs';
-import {EnvelopedData, SafeContents} from 'pkijs';
+import {ContentInfo, EncapsulatedContentInfo, SignedData }
+  from 'pkijs';
 import forge from 'node-forge';
-import Message from '../Message.jsx';
+import Utils from '../utils.jsx';
+// import jsPDF from 'jsPDF';
+import * as pdfmake from 'pdfmake/build/pdfmake';
+import * as vfs from 'pdfmake/build/vfs_fonts.js';
+//import '../../../node_modules/elemental/less/elemental.less';
+import './styles.min.css';
+import { Row, Col, FormRow, FormField, FormInput, FileUpload } from 'elemental';
 
 class Box extends React.Component {
   constructor(props) {
@@ -28,6 +33,7 @@ class Box extends React.Component {
     this.dataFileForEncrypt = {};
     this.FIEL = {};
     this.openpgp = require('openpgp');
+    this.jsrsasign = require('jsrsasign');
     this.state = {
       passPhrase: '12345678a',
       nameFileToDecrypt: ''
@@ -200,7 +206,7 @@ class Box extends React.Component {
 
   handleFileForDecrypt(e) {
     this.fileForDecrypt = e.target.files[0];
-    const readFile = Message.readFile(this.fileForDecrypt);
+    const readFile = Utils.readFile(this.fileForDecrypt);
     readFile.then((message) => {
       console.log('loaded file message: ', message);
       this.dataFileForDecrypt.data = message.data;
@@ -242,6 +248,10 @@ class Box extends React.Component {
     const asn1 = asn1js.fromBER(data);
     console.log('asn1: ', asn1);
 
+    // const asn1 = asn1js.fromBER(certificateBuffer);
+  	// const certificate = new Certificate({ schema: asn1.result });
+    // console.log('certificate: ', certificate);
+
     const cmsContentSimpl = new ContentInfo({schema: asn1.result});
     console.log("cmsContentSimpl: ", cmsContentSimpl);
 
@@ -270,27 +280,78 @@ class Box extends React.Component {
 
     let FileSaver = require('file-saver');
     FileSaver.saveAs(blobfile, this.dataFileForDecrypt.name);
+
+    // const r = require('jsrsasign');
+    // //let cms = new r.KJUR.asn1.cms();
+    // let certHex = r.ArrayBuffertohex(data);
+    // console.log('certHex: ', certHex);
+    // console.log('KJUR.asn1: ', r.KJUR.asn1);
+    // const _test = r.KJUR.asn1.setValueHex(certHex);
+    // console.log('_test: ', _test);
+    // console.log('certHex: ', certHex);
+    // let certPem = r.KJUR.asn1.ASN1Util.getPEMStringFromHex(certHex, "CMS");
+    // console.log('certPem: ', certPem);
+    // let cmsPem = this.cleanHeaderPEM(certPem);
+    // console.log('cmsPem: ', cmsPem);
+    // let hexpem2 = r.b64nltohex(cmsPem);
+    // console.log('hexpem2: ', hexpem2);
+
+
+
+    // let r2 = r.ASN1HEX.dump(certHex);
+    // console.log('r2: ', r2);
+    //
+    // let hCMS = certHex;
+    // let result = { isValid: false, parse: {} };
+    // result.parse.cmsType = "signedData";
+    // // find eContent data
+    // result.parse.econtent = r.ASN1HEX.getVbyList(hCMS, 0, [1, 0, 2, 1, 0]);
+    // console.log('result: ', result);
+    // let idx;
+  	// for (let i = 3; i < 6; i++) {
+  	//     idx = r.ASN1HEX.getIdxbyList(hCMS, 0, [1, 0, i]);
+    //     console.log('idx: ', idx);
+  	//     if (idx !== undefined) {
+  	// 	let tag = hCMS.substr(idx, 2);
+  	// 	if (tag === "a0") result.parse.certsIdx = idx;
+  	// 	if (tag === "a1") result.parse.revinfosIdx = idx;
+  	// 	if (tag === "31") result.parse.signerinfosIdx = idx;
+  	//     }
+  	// }
+
+
+
+
+    //
+    // let resultCMS = r.KJUR.asn1.cms.CMSUtil.verifySignedData({ cms: certHex});
+    // console.log('result: ', resultCMS);
+
+    // let doc = new jsPDF();
+    // doc.text('Hello world Component!', 10, 10);
+    // doc.save('a4.pdf');
   }
 
   handleFileForEncrypt(e){
     let file = e.target.files[0];
     const reader = new FileReader();
-    reader.onload = (event) => this.parseFileForEncrypt(event.target.result);
+    reader.onload = (event) => this.parseToB64FileForEncrypt(event.target.result);
     reader.readAsArrayBuffer(file);
     this.setDataFileForEncrypt(file.name);
   }
 
-  parseFileForEncrypt(data){
-    console.log('parseFileForEncrypt raw: ', data);
-    const bytes = new Uint8Array(data);
-    console.log('after Unit8Array: ', bytes);
-    this.messageForEncryptBinary = data;
-    this.messageForEncryptUnit8Array = bytes;
-    this.messageForEncryptArrayBuffer = data;
+  parseToB64FileForEncrypt(data){
+    // console.log('parseFileForEncrypt raw: ', data);
+    // const bytes = new Uint8Array(data);
+    // console.log('after Unit8Array: ', bytes);
+    // this.messageForEncryptBinary = data;
+    // this.messageForEncryptUnit8Array = bytes;
+    // this.messageForEncryptArrayBuffer = data;
 
-    const r = require('jsrsasign');
-    let fileHex = r.ArrayBuffertohex(data);
-    let fileB64 = r.hextob64(fileHex);
+    // const r = require('jsrsasign');
+    // console.log('r: ',r);
+
+    let fileHex = this.jsrsasign.ArrayBuffertohex(data);
+    let fileB64 = this.jsrsasign.hextob64(fileHex);
     this.messageForEncryptB64 = fileB64;
     console.log('this.messageForEncryptB64: ', fileB64);
   }
@@ -301,11 +362,13 @@ class Box extends React.Component {
   }
 
   parseFielCertificate(certificateBuffer){
-    console.log('parseCert: ', certificateBuffer);
-    const asn1 = asn1js.fromBER(certificateBuffer);
-  	const certificate = new Certificate({ schema: asn1.result });
-    console.log('parseCert certificate: ', certificate);
-    this.FIEL.certificate = certificate;
+    // console.log('parseCert: ', certificateBuffer);
+    // const asn1 = asn1js.fromBER(certificateBuffer);
+  	// const certificate = new Certificate({ schema: asn1.result });
+    // console.log('parseCert certificate: ', certificate);
+    // this.FIEL.certificate = certificate;
+
+
     // const _asn1 = forge.asn1.fromDer(certificateBuffer);
     // console.log('_asn1: ', _asn1);
     // const certforge = forge.pki.certificateFromAsn1(asn1);
@@ -313,33 +376,31 @@ class Box extends React.Component {
     // const certPem = forge.pki.certificateToPem(certforge);
     // console.log('certPem: ', certPem);
 
-    const r = require('jsrsasign');
-    let certHex = r.ArrayBuffertohex(certificateBuffer);
-    console.log('certHex: ', certHex);
-    let certPem = r.KJUR.asn1.ASN1Util.getPEMStringFromHex(certHex, "CERTIFICATE");
-    console.log('certPem: ', certPem);
+    const certHex = this.jsrsasign.ArrayBuffertohex(certificateBuffer);
+    const certPem = this.jsrsasign.KJUR.asn1.ASN1Util.getPEMStringFromHex(certHex, "CERTIFICATE");
     this.FIEL.certificatePem = certPem;
-    console.log('FIEL.certificatePem: ', this.FIEL.certificatePem);
+    console.log('loaded FIEL.certificatePem: ');
+    console.log(this.FIEL.certificatePem);
   }
 
   parseFielKey(keyBuffer){
-    const r = require('jsrsasign');
-    let prvp8bin = keyBuffer; // raw PKCS#8 private key;
-    console.log('prvp8bin: ', prvp8bin);
-    let prvp8hex = r.ArrayBuffertohex(prvp8bin);
+    // const r = require('jsrsasign');
+    // let prvp8bin = keyBuffer; // raw PKCS#8 private key;
+    console.log('prvp8bin: ', keyBuffer);
+    let prvp8hex = this.jsrsasign.ArrayBuffertohex(keyBuffer);
     console.log('prvp8hex: ', prvp8hex);
     // let prvp8pem = r.KJUR.asn1.ASN1Util.getPEMStringFromHex(prvp8hex, 'ENCRYPTED PRIVATE KEY');
-    let prvp8pem = r.KJUR.asn1.ASN1Util.getPEMStringFromHex(prvp8hex, 'ENCRYPTED PRIVATE KEY');
+    let prvp8pem = this.jsrsasign.KJUR.asn1.ASN1Util.getPEMStringFromHex(prvp8hex, 'ENCRYPTED PRIVATE KEY');
     console.log('prvp8pem: ', prvp8pem);
-    let prvkey = r.KEYUTIL.getKey(prvp8pem, '12345678a');
+    let prvkey = this.jsrsasign.KEYUTIL.getKey(prvp8pem, '12345678a');
     console.log('prvkey: ', prvkey);
-    this.FIEL.key = prvkey;
+    // this.FIEL.key = prvkey;
 
 
-    let prvkeyPem = r.KEYUTIL.getPEM(prvkey, "PKCS8PRV");
+    let prvkeyPem = this.jsrsasign.KEYUTIL.getPEM(prvkey, "PKCS8PRV");
     console.log('prvkeyPem: ', prvkeyPem);
     this.FIEL.keyPEM = prvkeyPem;
-    console.log('this.FIEL.keyPem: ', this.FIEL.keyPEM);
+    console.log('loaded this.FIEL.keyPem: ', this.FIEL.keyPEM);
 
     // const bytes = new Uint8Array(keyBuffer);
     // this.FIEL.key = this.openpgp.armor.encode(this.openpgp.enums.armor.private_key, bytes);
@@ -378,13 +439,13 @@ class Box extends React.Component {
     // rsa.readPrivateKeyFromASN1HexString(decryptedKeyHex);
   }
 
-  loadFileArrayBuffer(file, callback){
+  loadFileArrayBuffer(file, callback, openmode = 'binary'){
     const reader = new FileReader();
     reader.onload = event => callback.call(this, event.target.result);
-    reader.readAsArrayBuffer(file);
+    (openmode == 'binary') ? reader.readAsArrayBuffer(file) : reader.readAsText(file);
   }
 
-  handleLoadFile(event, callback){
+  handleLoadFile(event, callback, openmode = 'binary'){
     event.preventDefault();
     this.loadFileArrayBuffer(event.target.files[0], callback);
   }
@@ -393,24 +454,27 @@ class Box extends React.Component {
     e.preventDefault();
     //certSimpl.subjectPublicKeyInfo.importKey(publicKey)
 
-    let cmsSignedSimpl = new SignedData({
-      version: 1,
-      encapContentInfo: new EncapsulatedContentInfo({
-        eContentType: "1.2.840.113549.1.7.1", // "data" content type
-        eContent: new asn1js.OctetString({ value_hex: this.messageForEncryptArrayBuffer })
-      }),
-      signerInfos: [
-        new SignerInfo({
-          version: 1,
-          sid: new IssuerAndSerialNumber({
-            issuer: this.FIEL.certificate.issuer,
-            serialNumber: this.FIEL.certificate.serialNumber
-          })
-        })
-      ],
-      certificates: [this.FIEL.certificate]
-    });
-    console.log('cmsSignedSimpl: ', cmsSignedSimpl);
+
+    // let cmsSignedSimpl = new SignedData({
+    //   version: 1,
+    //   encapContentInfo: new EncapsulatedContentInfo({
+    //     eContentType: "1.2.840.113549.1.7.1", // "data" content type
+    //     eContent: new asn1js.OctetString({ value_hex: this.messageForEncryptArrayBuffer })
+    //   }),
+    //   signerInfos: [
+    //     new SignerInfo({
+    //       version: 1,
+    //       sid: new IssuerAndSerialNumber({
+    //         issuer: this.FIEL.certificate.issuer,
+    //         serialNumber: this.FIEL.certificate.serialNumber
+    //       })
+    //     })
+    //   ],
+    //   certificates: [this.FIEL.certificate]
+    // });
+    // console.log('cmsSignedSimpl: ', cmsSignedSimpl);
+
+
 
     // const contentInfo = new EncapsulatedContentInfo({
     //   eContent: new asn1js.OctetString({ valueHex: this.messageForEncryptArrayBuffer })
@@ -652,6 +716,14 @@ class Box extends React.Component {
     reader.readAsText(file);
   }
 
+  cleanHeaderPEM(data){
+    let arrPem = data.split('\n');
+    arrPem.splice(0, 1);
+    let len = arrPem.length - 2;
+    arrPem.splice(len, 2);
+    return arrPem.join('\n');
+  }
+
   parseNewSignedFile(data){
     console.log('parseNewSignedFile: ', data);
     let cmsPem = data;
@@ -711,12 +783,23 @@ class Box extends React.Component {
       console.log('getSignatureAlgorithmName: ', resultCMS.certs[0].getSignatureAlgorithmName());
       console.log('getSignatureValueHex: ', resultCMS.certs[0].getSignatureValueHex());
       console.log('getInfo: ', resultCMS.certs[0].getInfo());
+
+      // let doc = new jsPDF();
+      // doc.text(resultCMS.certs[0].getInfo(), 10, 10);
+      // doc.save('acuse.pdf');
+
+      pdfMake.vfs = vfs.pdfMake.vfs;
+      let docDefinition = { content: resultCMS.certs[0].getInfo()};
+      pdfMake.createPdf(docDefinition).download('acusedeloquesea.pdf');
+
     }
     catch(ex){
       console.log('error verify jsrsasign', ex);
     }
 
   }
+
+
 
   render() {
     return (
@@ -800,6 +883,20 @@ class Box extends React.Component {
           file signed
           <input type="file" onChange={this.handleNewSignedFile.bind(this)}></input>
         </label>
+      <Row>
+        <Col sm="1/4">
+          <FormRow>
+            <FormField label="Archivo a encriptar"></FormField>
+          </FormRow>
+        </Col>
+        <Col sm="3/4">
+          <FormRow>
+            <FormInput type="file" onChange={this.handleFileForEncrypt.bind(this)}></FormInput>
+            <FormInput type="file" accept=".cer" onChange={ event => { this.handleLoadFile(event, this.parseFielCertificate) }}></FormInput>
+            <FormInput type="file" accept=".key" onChange={ event => { this.handleLoadFile(event, this.parseFielKey) }}></FormInput>
+          </FormRow>
+        </Col>
+      </Row>
       </div>
     )
   }
