@@ -1,21 +1,24 @@
 import React from 'react';
-import {createWriteStream, supported, version} from 'StreamSaver';
 import mime from 'mime-types';
 import * as asn1js from "asn1js";
-import {ContentInfo, EncapsulatedContentInfo, SignedData }
-  from 'pkijs';
-import forge from 'node-forge';
-import Utils from '../utils.jsx';
-// import jsPDF from 'jsPDF';
+import {ContentInfo, EncapsulatedContentInfo, SignedData } from 'pkijs';
+import Utils from '../utils.js';
+import UtilsFIEL from '../utils_fiel.js';
+import sindejs from '../sindejs.js';
+import * as FileSaver from 'file-saver';
 import * as pdfmake from 'pdfmake/build/pdfmake';
 import * as vfs from 'pdfmake/build/vfs_fonts.js';
-//import '../../../node_modules/elemental/less/elemental.less';
-import './styles.min.css';
-import { Row, Col, FormRow, FormField, FormInput, FileUpload } from 'elemental';
+import '../styles.min.css';
+import { Row, Col, FormRow, FormField, FormInput, FileUpload, Button, Spinner} from 'elemental';
 
 class Box extends React.Component {
   constructor(props) {
     super(props);
+
+    this.messageForEncryptB64;
+    this.publicKeys = {};
+    this.privateKeys = {};
+
     this.publicKey1;
     this.publicKey2;
     this.privateKey1;
@@ -25,7 +28,10 @@ class Box extends React.Component {
     this.messageForEncryptBinary;
     this.messageForEncryptUnit8Array;
     this.messageForEncryptArrayBuffer;
-    this.messageForEncryptB64;
+
+
+
+
     this.inputPublicKey1;
     this.inputPrivateKey1;
     this.fileForDecrypt;
@@ -38,6 +44,20 @@ class Box extends React.Component {
       passPhrase: '12345678a',
       nameFileToDecrypt: ''
     }
+  }
+
+  componentDidMount(){
+    const _loadPublicKey1 = sindejs.loadPublicKey('http://localhost:8080/apps2012/filesPublication/QApgp1.gpg');
+    _loadPublicKey1.then(
+      (key) => { this.publicKeys.key1 = key; console.log('_loadKey1'); console.log(this.publicKeys.key1); }, 
+      (error) => { console.log(error) }
+    );
+
+    const _loadPublicKey2 = sindejs.loadPublicKey('http://localhost:8080/apps2012/filesPublication/QApgp2.gpg');
+    _loadPublicKey2.then(
+      (key) => { this.publicKeys.key2 = key; console.log('_loadKey2'); console.log(this.publicKeys.key2); }, 
+      (error) => { console.log(error) }
+    );
   }
 
   handlePublicKey(e) {
@@ -206,7 +226,7 @@ class Box extends React.Component {
 
   handleFileForDecrypt(e) {
     this.fileForDecrypt = e.target.files[0];
-    const readFile = Utils.readFile(this.fileForDecrypt);
+    const readFile = Utils.readFileForDecrypt(this.fileForDecrypt);
     readFile.then((message) => {
       console.log('loaded file message: ', message);
       this.dataFileForDecrypt.data = message.data;
@@ -333,49 +353,28 @@ class Box extends React.Component {
 
   handleFileForEncrypt(e){
     let file = e.target.files[0];
-    const reader = new FileReader();
-    reader.onload = (event) => this.parseToB64FileForEncrypt(event.target.result);
-    reader.readAsArrayBuffer(file);
+    const readFile = Utils.readFileToB64(file);
+    readFile.then((data) => {
+      console.log('loaded file to B64: ', data);
+      this.messageForEncryptB64 = data;
+    }, (err) => {
+      console.log('error in loading file for encrypt: ', err);
+    });
+    // const reader = new FileReader();
+    // reader.onload = (event) => this.parseToB64FileForEncrypt(event.target.result);
+    // reader.readAsArrayBuffer(file);
     this.setDataFileForEncrypt(file.name);
   }
 
-  parseToB64FileForEncrypt(data){
-    // console.log('parseFileForEncrypt raw: ', data);
-    // const bytes = new Uint8Array(data);
-    // console.log('after Unit8Array: ', bytes);
-    // this.messageForEncryptBinary = data;
-    // this.messageForEncryptUnit8Array = bytes;
-    // this.messageForEncryptArrayBuffer = data;
-
-    // const r = require('jsrsasign');
-    // console.log('r: ',r);
-
-    let fileHex = this.jsrsasign.ArrayBuffertohex(data);
-    let fileB64 = this.jsrsasign.hextob64(fileHex);
-    this.messageForEncryptB64 = fileB64;
-    console.log('this.messageForEncryptB64: ', fileB64);
-  }
-
-  handleCert(e){
-    e.preventDefault();
-    this.loadFileArrayBuffer(e.target.files[0], this.parseCert);
-  }
+  // parseToB64FileForEncrypt(data){
+  //   const fileHex = this.jsrsasign.ArrayBuffertohex(data);
+  //   const fileB64 = this.jsrsasign.hextob64(fileHex);
+  //   this.messageForEncryptB64 = fileB64;
+  //   console.log('loaded this.messageForEncryptB64: ');
+  //   console.log(this.messageForEncryptB64);
+  // }
 
   parseFielCertificate(certificateBuffer){
-    // console.log('parseCert: ', certificateBuffer);
-    // const asn1 = asn1js.fromBER(certificateBuffer);
-  	// const certificate = new Certificate({ schema: asn1.result });
-    // console.log('parseCert certificate: ', certificate);
-    // this.FIEL.certificate = certificate;
-
-
-    // const _asn1 = forge.asn1.fromDer(certificateBuffer);
-    // console.log('_asn1: ', _asn1);
-    // const certforge = forge.pki.certificateFromAsn1(asn1);
-    // console.log('certforge: ', certforge);
-    // const certPem = forge.pki.certificateToPem(certforge);
-    // console.log('certPem: ', certPem);
-
     const certHex = this.jsrsasign.ArrayBuffertohex(certificateBuffer);
     const certPem = this.jsrsasign.KJUR.asn1.ASN1Util.getPEMStringFromHex(certHex, "CERTIFICATE");
     this.FIEL.certificatePem = certPem;
@@ -384,59 +383,13 @@ class Box extends React.Component {
   }
 
   parseFielKey(keyBuffer){
-    // const r = require('jsrsasign');
-    // let prvp8bin = keyBuffer; // raw PKCS#8 private key;
-    console.log('prvp8bin: ', keyBuffer);
     let prvp8hex = this.jsrsasign.ArrayBuffertohex(keyBuffer);
-    console.log('prvp8hex: ', prvp8hex);
-    // let prvp8pem = r.KJUR.asn1.ASN1Util.getPEMStringFromHex(prvp8hex, 'ENCRYPTED PRIVATE KEY');
     let prvp8pem = this.jsrsasign.KJUR.asn1.ASN1Util.getPEMStringFromHex(prvp8hex, 'ENCRYPTED PRIVATE KEY');
-    console.log('prvp8pem: ', prvp8pem);
-    let prvkey = this.jsrsasign.KEYUTIL.getKey(prvp8pem, '12345678a');
-    console.log('prvkey: ', prvkey);
-    // this.FIEL.key = prvkey;
-
-
+    let prvkey = this.jsrsasign.KEYUTIL.getKey(prvp8pem, this.state.passPhrase);
     let prvkeyPem = this.jsrsasign.KEYUTIL.getPEM(prvkey, "PKCS8PRV");
-    console.log('prvkeyPem: ', prvkeyPem);
     this.FIEL.keyPEM = prvkeyPem;
-    console.log('loaded this.FIEL.keyPem: ', this.FIEL.keyPEM);
-
-    // const bytes = new Uint8Array(keyBuffer);
-    // this.FIEL.key = this.openpgp.armor.encode(this.openpgp.enums.armor.private_key, bytes);
-    //console.log('loaded fiel key: ', this.FIEL.key);
-    //const pk = PrivateKeyInfo({ privateKey: keyBuffer });
-    //const pk = PrivateKeyInfo({ parsedKey: this.FIEL.key });
-    //console.log('privateKey: ', pk);
-
-    // const NodeRSA = require('node-rsa');
-    // const key = new NodeRSA();
-    //
-    // const asn1Der = forge.asn1.fromDer(keyBuffer, 64);
-    // console.log('asn1Der: ', asn1Der);
-    //
-    // const asn1 = asn1js.fromBER(keyBuffer);
-    // console.log('asn1: ', asn1);
-
-    // this.FIEL.key = "" +
-    // "-----BEGIN ENCRYPTED PRIVATE KEY-----\r\n" +
-    // this._arrayBufferToBase64(keyBuffer)
-    // "-----END ENCRYPTED PRIVATE KEY-----\r\n";
-    // console.log('parseFielKey: ', this.FIEL.key);
-
-    //this.FIEL.key = this._arrayBufferToBase64(keyBuffer);
-    //const pk = PrivateKeyInfo({ schema: asn1 });
-    //console.log('pk: ', pk);
-    //const rs = require('jsrsasign');
-    //let prvKey = rs.KEYUTIL.getDecryptedKeyHex(this.FIEL.key, '12345678a');
-
-    // const bs64 = require('base64-js');
-    // let key64 = bs64.fromByteArray(keyBuffer);
-    // console.log('key64: ', key64);
-    // var encryptedKey = '-----BEGIN RSA PRIVATE KEY--(snip)Proc-Type: 4,ENCRYPTED(snip)';
-    // var decryptedKeyHex = PKCS5PKEY.getDecryptedKeyHex(encryptedKey, passcode);
-    // var rsa = new RSAKey();
-    // rsa.readPrivateKeyFromASN1HexString(decryptedKeyHex);
+    console.log('loaded this.FIEL.keyPem: ');
+    console.log(this.FIEL.keyPEM);
   }
 
   loadFileArrayBuffer(file, callback, openmode = 'binary'){
@@ -452,177 +405,7 @@ class Box extends React.Component {
 
   handleEncryptSign(e){
     e.preventDefault();
-    //certSimpl.subjectPublicKeyInfo.importKey(publicKey)
 
-
-    // let cmsSignedSimpl = new SignedData({
-    //   version: 1,
-    //   encapContentInfo: new EncapsulatedContentInfo({
-    //     eContentType: "1.2.840.113549.1.7.1", // "data" content type
-    //     eContent: new asn1js.OctetString({ value_hex: this.messageForEncryptArrayBuffer })
-    //   }),
-    //   signerInfos: [
-    //     new SignerInfo({
-    //       version: 1,
-    //       sid: new IssuerAndSerialNumber({
-    //         issuer: this.FIEL.certificate.issuer,
-    //         serialNumber: this.FIEL.certificate.serialNumber
-    //       })
-    //     })
-    //   ],
-    //   certificates: [this.FIEL.certificate]
-    // });
-    // console.log('cmsSignedSimpl: ', cmsSignedSimpl);
-
-
-
-    // const contentInfo = new EncapsulatedContentInfo({
-    //   eContent: new asn1js.OctetString({ valueHex: this.messageForEncryptArrayBuffer })
-    // });
-
-    // cmsSignedSimpl.encapContentInfo.eContent = contentInfo.eContent;
-    // console.log('eContent added');
-
-    // const r = require('jsrsasign');
-    // console.log('load jsrsasign: ', this.FIEL.key);
-    // var h = r.KEYUTIL.getKeyFromEncryptedPKCS8PEM(this.FIEL.key, this.state.passPhrase);
-    // //var h = r.KEYUTIL.getDecryptedKeyHex(this.FIEL.key, this.state.passPhrase);
-    // //let h = r.KEYUTIL.getKeyFromPlainPrivatePKCS8PEM(this.FIEL.keyPEM);
-    // console.log('h: ', h);
-
-    // signed pkijs
-    // let signok = cmsSignedSimpl.sign(h, 0, "sha-1");
-    //let signok = cmsSignedSimpl.sign(this.FIEL.keyPEM, 0, "sha-1");
-    //console.log('signok pkijs: ', signok);
-
-
-    // signed jsrsasign
-    // let sd = r.KJUR.asn1.cms.CMSUtil.newSignedData({
-    //   content: {str: "jsrsasign"},
-    //   certs: [this.FIEL.certificate],
-    //   signerInfos: [{
-    //     hashAlg: 'sha-1',
-    //     sAttr: {
-    //       SigningTime: {},
-    //       SigningCertificateV2: {array: [this.FIEL.certificate]},
-    //     },
-    //     signerCert: this.FIEL.certificate,
-    //     sigAlg: 'SHA1withRSA',
-    //     signerPrvKey: this.FIEL.key
-    //   }]
-    // });
-
-    let prvKeyPEM = this.FIEL.keyPEM;
-    let certPEM = this.FIEL.certificatePem;
-    console.log('before sign jsrsasign', prvKeyPEM, certPEM);
-    let param = {
-        content: {str: "jsrsasign"},
-        certs: [certPEM],
-        signerInfos: [{
-          hashAlg: 'sha256',
-          sAttr: {
-          },
-          signerCert: certPEM,
-          sigAlg: 'SHA256withRSA',
-          signerPrvKey: prvKeyPEM
-        }]
-    };
-
-    param.content.str = this.messageForEncryptB64;
-    //param.signerInfos[0].hashAlg = f1.hashalg1.value;
-    //param.signerInfos[0].sigAlg = f1.sigalg1.value;
-    // if (f1.signingtime1.checked) {
-    //   param.signerInfos[0].sAttr.SigningTime = {};
-    // }
-
-    const r = require('jsrsasign');
-    let cmsPem;
-    try {
-      let sd = r.KJUR.asn1.cms.CMSUtil.newSignedData(param);
-      cmsPem = sd.getPEM();
-      console.log('cmsPem: ', cmsPem);
-      const FileSaver = require('file-saver');
-      const blob = new Blob([cmsPem], {type: "text/plain;charset=utf-8"});
-      FileSaver.saveAs(blob, "testSign.txt");
-      // const asn1 = asn1js.fromBER(cmsPem);
-      // console.log('asn1: ', asn1);
-
-      // const cmsContentSimpl = new ContentInfo({schema: asn1.result});
-      // console.log("cmsContentSimpl: ", cmsContentSimpl);
-      //
-      // const cmsSignedSimpl = new SignedData({schema: cmsContentSimpl.content});
-      // console.log("cmsSignedSimpl: ", cmsSignedSimpl);
-      //
-      // const cmsEncapsulatedSimpl = new EncapsulatedContentInfo(cmsSignedSimpl.encapContentInfo);
-      // console.log('cmsEncapsulatedSimpl: ', cmsEncapsulatedSimpl);
-
-    } catch (ex) {
-      //f1.newcms1.value = ex;
-      console.log('error sign jsrsasign', ex);
-    }
-
-    // try{
-    //   let hexpem = r.b64nltohex(cmsPem);
-    //   let arrPem = cmsPem.split('\n');
-    //   console.log(arrPem.length);
-    //   arrPem.splice(0, 1);
-    //   console.log(arrPem.length);
-    //   let len = arrPem.length-2
-    //   console.log('len: ', len);
-    //   console.log('array: ', arrPem);
-    //   arrPem.splice(len, 2);
-    //   console.log('array: ', arrPem);
-    //   console.log(arrPem.length);
-    //   cmsPem = arrPem.join('\n');
-    //   // cmsPem = cmsPem.substr(0, cmsPem.lastIndexOf("\n"));
-    //   console.log(cmsPem);
-    //   console.log('hexpem: ',hexpem);
-    //   let hexpem2 = r.b64nltohex(cmsPem);
-    //   console.log('hexpem2: ', hexpem2);
-    //   let resultCMS = r.KJUR.asn1.cms.CMSUtil.verifySignedData({ cms: hexpem2});
-    //   console.log('result: ', resultCMS);
-    //
-    //   let hexresult = resultCMS.parse.econtent;
-    //   console.log('hexresult: ', hexresult);
-    //
-    //   let resultArrayBuffer = r.hextoArrayBuffer(hexresult);
-    //   console.log('resultArrayBuffer: ', resultArrayBuffer);
-    //
-    //   let resultString = r.hextorstr(hexresult);
-    //   console.log('resultString: ', resultString);
-    //   // let resultUtf8 = r.b64toutf8(resultString);
-    //   // console.log('resultUtf8: ', resultUtf8);
-    //
-    //   const typeFile = mime.lookup('test.pdf');
-    //   // console.log('typeFile: ', typeFile);
-    //   // this.dataFileForDecrypt.typeExtension = typeFile;
-    //
-    //   // resultArrayBuffer = r.hextoArrayBuffer(resultString);
-    //   // console.log('resultArrayBuffer 2: ', resultArrayBuffer);
-    //
-    //   let blobfile = this._b64toBlob(resultString, typeFile);
-    //
-    //   // let blobfile = new Blob([resultArrayBuffer], {type: typeFile});
-    //   console.log('blob: ', blobfile);
-    //   //let FileSaver = require('file-saver');
-    //   FileSaver.saveAs(blobfile, 'test.pdf');
-    //
-    //   // console.log('issuerstring: ', resultCMS.certs[0].getIssuerString());
-    //   // console.log('getSubjectString: ', resultCMS.certs[0].getSubjectString());
-    //   // console.log('getSerialNumberHex: ', resultCMS.certs[0].getSerialNumberHex());
-    //   // console.log('getSerialNumberUTF8: ', r.hextoutf8(resultCMS.certs[0].getSerialNumberHex()));
-    //   // console.log('getPublicKey: ', resultCMS.certs[0].getPublicKey());
-    //   // console.log('getPublicKey n: ', resultCMS.certs[0].getPublicKey().n.toString(16));
-    //   // console.log('getSignatureAlgorithmName: ', resultCMS.certs[0].getSignatureAlgorithmName());
-    //   // console.log('getSignatureValueHex: ', resultCMS.certs[0].getSignatureValueHex());
-    //   // console.log('getInfo: ', resultCMS.certs[0].getInfo());
-    // }
-    // catch(ex){
-    //   console.log('error verify jsrsasign', ex);
-    // }
-
-    //let signok = cmsSignedSimpl.sign(h, 0, "sha-256");
-    //console.log('signok: ', signok);
   }
 
   _b64toBlob(b64Data, contentType, sliceSize) {
@@ -800,6 +583,121 @@ class Box extends React.Component {
   }
 
 
+  encrypt(){
+    console.log('Encrypt init');
+
+    let options = {
+      data: this.messageForEncryptB64,
+      publicKeys: this.publicKey1,
+    };
+
+    this.openpgp.encrypt(options).then((ciphertext) => {
+      console.log('encrypted: ', ciphertext);
+      let encrypted = ciphertext.data; // '-----BEGIN PGP MESSAGE ... END PGP MESSAGE-----'
+      // this.messageForDecrypt = this.openpgp.message.readArmored(encrypted);
+      // console.log('encrypted armor: ', this.messageForDecrypt);
+
+      options.data = encrypted;
+      options.publicKeys = this.publicKey2;
+
+      this.openpgp.encrypt(options).then((ciphertext) => {
+        console.log('second encrypt: ', ciphertext);
+        let encrypted2 = ciphertext.data;
+
+        const typeFile = mime.lookup(this.dataFileForEncrypt.name);
+        console.log('typeFile: ', typeFile);
+        this.dataFileForEncrypt.type = typeFile;
+
+        let blobfile = new Blob([ciphertext.data], {type: typeFile});
+        console.log('blob: ', blobfile);
+
+        let FileSaver = require('file-saver');
+        FileSaver.saveAs(blobfile, this.dataFileForEncrypt.name + ".cfe");
+      });
+
+    });
+  }
+
+
+  /*
+  Only final code
+  */
+
+
+  handleSignEncrypt(e){
+    e.preventDefault();
+    console.log('start SingEncrypt');
+    const singProcess = sindejs.sing(this.messageForEncryptB64, this.FIEL.certificatePem, this.FIEL.keyPEM);
+    singProcess.then(
+      (messageSigned)=> {
+        console.log('messageSigned');
+        console.log(messageSigned);
+        const encryptProcess = sindejs.encrypt(messageSigned, this.publicKeys);
+        encryptProcess.then(
+          (messageEncrypted) => {
+            console.log('message encrypted');
+            console.log(messageEncrypted);
+            const blobfile = new Blob([messageEncrypted], {type: "text/plain;charset=utf-8"});
+            console.log('blob: ', blobfile);
+            FileSaver.saveAs(blobfile, this.dataFileForEncrypt.name + ".cfe");
+          }, 
+          (error) => { console.log(error); }
+        );
+      }, 
+      (error) => { console.log(error); }
+    );
+  }
+
+  loadFileForEncrypt(file){
+    const readFile = Utils.readFileToB64(file);
+    readFile.then((data) => {
+      console.log('loaded file for encrypt to B64: ', data);
+      this.messageForEncryptB64 = data;
+    }, (err) => {
+      console.log('error in loading file for encrypt: ', err);
+    });
+    this.setDataFileForEncrypt(file.name);
+  }
+
+  loadCertificate(file){
+    const readFile = UtilsFIEL.readCertificateToPEM(file);
+    readFile.then((data) => {
+      this.FIEL.certificatePem = data;
+      console.log('loaded certificate: ');
+      console.log(this.FIEL.certificatePem);
+    }, (err) => {
+      console.log('error in loading certificate: ', err);
+    });
+  }
+
+  loadKeyFIEL(file){
+    const readFile = UtilsFIEL.readKeyFIELToPEM(file, this.state.passPhrase);
+    readFile.then((data) => {
+      this.FIEL.keyPEM = data;
+      console.log('loaded key fiel: ');
+      console.log(this.FIEL.keyPEM);
+    }, (err) => {
+      console.log('error in loading key fiel: ', err);
+    });
+  }
+
+  handleLoadFile(event, type){
+    event.preventDefault();
+    let file = event.target.files[0];
+    switch (type) {
+      case 'fileForEncrypt':
+        this.loadFileForEncrypt(file);
+        break;
+      case 'certificate':
+        this.loadCertificate(file);
+        break;
+      case 'keyFIEL':
+        this.loadKeyFIEL(file);
+        break;
+      default:
+        console.log('Do not exist that type for load file');
+    }
+  }
 
   render() {
     return (
@@ -891,10 +789,12 @@ class Box extends React.Component {
         </Col>
         <Col sm="3/4">
           <FormRow>
-            <FormInput type="file" onChange={this.handleFileForEncrypt.bind(this)}></FormInput>
-            <FormInput type="file" accept=".cer" onChange={ event => { this.handleLoadFile(event, this.parseFielCertificate) }}></FormInput>
-            <FormInput type="file" accept=".key" onChange={ event => { this.handleLoadFile(event, this.parseFielKey) }}></FormInput>
-          </FormRow>
+            <FormInput type="file" onChange={ event => { this.handleLoadFile(event, 'fileForEncrypt') } }></FormInput>
+            <FormInput type="file" accept=".cer" onChange={ event => { this.handleLoadFile(event, 'certificate') }}></FormInput>
+            <FormInput type="file" accept=".key" onChange={ event => { this.handleLoadFile(event, 'keyFIEL') }}></FormInput>
+            <FormInput type="text" onChange={this.handlePassPhrase.bind(this)} value={this.state.passPhrase}></FormInput>
+            <Button type="primary" onClick={this.handleSignEncrypt.bind(this)}><Spinner type="inverted" />firmando y encriptando</Button>
+        </FormRow>
         </Col>
       </Row>
       </div>

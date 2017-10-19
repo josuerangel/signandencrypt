@@ -1,7 +1,7 @@
 {
-  "name": "filesPoC",
-  "version": "1.0.0",
-  "description": "read and write files",
+  "name": "sindejs",
+  "version": "0.1.0",
+  "description": "sing, encrypt and decrypt files",
   "main": "index.js",
   "author": "Josue Rangel",
   "license": "MIT",
@@ -35,14 +35,11 @@
     "file-saver": "^1.3.3",
     "jsrsasign": "^8.0.3",
     "mime-types": "^2.1.16",
-    "node-forge": "^0.7.1",
-    "node-rsa": "^0.4.2",
     "openpgp": "^2.5.8",
     "pdfmake": "^0.1.33",
     "pkijs": "^2.1.5",
     "pvutils": "^1.0.8",
     "react-addons-css-transition-group": "^15.6.2",
-    "streamsaver": "^1.0.1",
     "text-encoding": "^0.6.4"
   },
   "jshintConfig": {
