@@ -8,7 +8,7 @@
   "scripts": {
     "start": "webpack-dev-server --inline --port 3000",
     "build": "webpack --env=prod --progress --profile --colors --config=webpack.prod.config.js",
-    "rbpkijs": "npm rebuild pvutils asn1js pkijs"
+    "rbpkijs": "npm rebuild asn1js pkijs"
   },
   "devDependencies": {
     "babel-core": "^6.25.0",
@@ -38,7 +38,6 @@
     "openpgp": "^2.5.8",
     "pdfmake": "^0.1.33",
     "pkijs": "^2.1.5",
-    "pvutils": "^1.0.8",
     "react-addons-css-transition-group": "^15.6.2",
     "text-encoding": "^0.6.4"
   },

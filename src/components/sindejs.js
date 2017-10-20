@@ -77,6 +77,86 @@ export default class sindejs {
         }     
       });
     }
+
+    static decrypt(message, format, publicKeys, privateKeys){
+      return new Promise((resolve, reject) => {
+        let messageForDecrypt;
+        let options = {
+          message: message,
+          publicKeys: publicKeys.key2,
+          privateKey: privateKeys.key2,
+          format: format
+        };
+
+        // if (format == 'binary') options.format = 'binary';
+        try{
+        openpgp.decrypt(options).then((plaintext) => {
+          messageForDecrypt = plaintext;
+          console.log('after fisrt decrypt plaintext: ', plaintext);
+          console.log('after fisrt decrypt data');
+          console.log(plaintext.data);
+
+          // if (this.privateKey1 != undefined) {
+            let data = messageForDecrypt.data;
+            console.log('second raw: ', data);
+
+            if (format == 'binary') messageForDecrypt = openpgp.message.read(data);
+            else messageForDecrypt = openpgp.message.readArmored(data);
+            console.log('readed: ', messageForDecrypt);
+
+            options = {
+              message: messageForDecrypt,
+              publicKeys: publicKeys.key1,
+              privateKey: privateKeys.key1,
+              format: format
+            };
+
+            openpgp.decrypt(options).then((plaintext) => {
+              console.log('second key', plaintext);
+              console.log('binary to blob: ', plaintext.data);
+              console.log('binary buffer to blob: ', plaintext.data.buffer);
+
+              resolve(plaintext);
+
+              // const typeFile = mime.lookup(this.dataFileForDecrypt.name);
+              // console.log('typeFile: ', typeFile);
+              // this.dataFileForDecrypt.typeExtension = typeFile;
+
+              // let blobfile = new Blob([plaintext.data], {type: typeFile});
+              // console.log('blob: ', blobfile);
+
+              // let FileSaver = require('file-saver');
+
+              // if (this.dataFileForDecrypt.encryptExtension == 'cfei') {
+              //   FileSaver.saveAs(blobfile, this.dataFileForDecrypt.name);
+              // } else {
+              //   console.log('inside national');
+                // let file = new File([plaintext.data], this.dataFileForDecrypt.name, {type: typeFile});
+                // console.log('file: ', file);
+                // const reader = new FileReader();
+                // reader.onload = (event) => this.parseFile(event.target.result);
+                // reader.readAsArrayBuffer(file);
+              // }
+            });
+          // }
+        }); 
+        }
+        catch(e){
+          reject(Error('Error in decrypt: ' + e.message));
+        }  
+      });
+    }
+
+    static unsing(cms){
+      return new Promise((resolve, reject) => {
+        try{
+
+        }
+        catch(e){
+          reject(Error('Error in unsing: ' + e.message));
+        }
+      });
+    }
     
     /**
      * Load PGP key from url, convert to object key for pgp encrypt

@@ -1,4 +1,5 @@
 import React from 'react';
+import PropTypes from 'prop-types';
 import mime from 'mime-types';
 import * as asn1js from "asn1js";
 import {ContentInfo, EncapsulatedContentInfo, SignedData } from 'pkijs';
@@ -11,13 +12,17 @@ import * as vfs from 'pdfmake/build/vfs_fonts.js';
 import '../styles.min.css';
 import { Row, Col, FormRow, FormField, FormInput, FileUpload, Button, Spinner} from 'elemental';
 
-class Box extends React.Component {
+class BoxEncrypt extends React.Component {
   constructor(props) {
     super(props);
 
     this.messageForEncryptB64;
     this.publicKeys = {};
     this.privateKeys = {};
+
+
+
+
 
     this.publicKey1;
     this.publicKey2;
@@ -122,41 +127,41 @@ class Box extends React.Component {
       this.privateKey2 = privKeyObj;
     }
 
-  handleEncrypt(e) {
-    console.log('publicKey1: ', this.publicKey1);
+  // handleEncrypt(e) {
+  //   console.log('publicKey1: ', this.publicKey1);
 
-    let options = {
-      data: this.messageForEncryptUnit8Array, // input as String (or Uint8Array)
-      publicKeys: this.publicKey1, // for encryption
-      //privateKeys: privKeyObj // for signing (optional)
-    };
+  //   let options = {
+  //     data: this.messageForEncryptUnit8Array, // input as String (or Uint8Array)
+  //     publicKeys: this.publicKey1, // for encryption
+  //     //privateKeys: privKeyObj // for signing (optional)
+  //   };
 
-    this.openpgp.encrypt(options).then((ciphertext) => {
-      console.log('encrypted: ', ciphertext);
-      let encrypted = ciphertext.data; // '-----BEGIN PGP MESSAGE ... END PGP MESSAGE-----'
-      this.messageForDecrypt = this.openpgp.message.readArmored(encrypted);
-      console.log('encrypted armor: ', this.messageForDecrypt);
+  //   this.openpgp.encrypt(options).then((ciphertext) => {
+  //     console.log('encrypted: ', ciphertext);
+  //     let encrypted = ciphertext.data; // '-----BEGIN PGP MESSAGE ... END PGP MESSAGE-----'
+  //     this.messageForDecrypt = this.openpgp.message.readArmored(encrypted);
+  //     console.log('encrypted armor: ', this.messageForDecrypt);
 
-      options.data = encrypted;
-      options.publicKeys = this.publicKey2;
+  //     options.data = encrypted;
+  //     options.publicKeys = this.publicKey2;
 
-      this.openpgp.encrypt(options).then((ciphertext) => {
-        console.log('second encrypt: ', ciphertext);
-        let encrypted2 = ciphertext.data;
+  //     this.openpgp.encrypt(options).then((ciphertext) => {
+  //       console.log('second encrypt: ', ciphertext);
+  //       let encrypted2 = ciphertext.data;
 
-        const typeFile = mime.lookup(this.dataFileForEncrypt.name);
-        console.log('typeFile: ', typeFile);
-        this.dataFileForEncrypt.type = typeFile;
+  //       const typeFile = mime.lookup(this.dataFileForEncrypt.name);
+  //       console.log('typeFile: ', typeFile);
+  //       this.dataFileForEncrypt.type = typeFile;
 
-        let blobfile = new Blob([ciphertext.data], {type: typeFile});
-        console.log('blob: ', blobfile);
+  //       let blobfile = new Blob([ciphertext.data], {type: typeFile});
+  //       console.log('blob: ', blobfile);
 
-        let FileSaver = require('file-saver');
-        FileSaver.saveAs(blobfile, this.dataFileForEncrypt.name + ".cfei");
-      });
+  //       let FileSaver = require('file-saver');
+  //       FileSaver.saveAs(blobfile, this.dataFileForEncrypt.name + ".cfei");
+  //     });
 
-    });
-  }
+  //   });
+  // }
 
   handleDecrypt(e){
     e.preventDefault();
@@ -623,9 +628,24 @@ class Box extends React.Component {
   Only final code
   */
 
+  handleEncrypt(event){
+    event.preventDefault();
+    console.log('start Encrypt');
+    const encryptProcess = sindejs.encrypt(this.messageForEncryptB64, this.publicKeys);
+    encryptProcess.then(
+      (messageEncrypted) => {
+        console.log('message encrypted');
+        console.log(messageEncrypted);
+        const blobfile = new Blob([messageEncrypted], {type: "text/plain;charset=utf-8"});
+        console.log('this.dataFileForEncrypt', this.dataFileForEncrypt);
+        FileSaver.saveAs(blobfile, this.dataFileForEncrypt.originalName + ".cfei");
+      }, 
+      (error) => { console.log(error); }
+    );
+  }
 
-  handleSignEncrypt(e){
-    e.preventDefault();
+  handleSignEncrypt(event){
+    event.preventDefault();
     console.log('start SingEncrypt');
     const singProcess = sindejs.sing(this.messageForEncryptB64, this.FIEL.certificatePem, this.FIEL.keyPEM);
     singProcess.then(
@@ -639,7 +659,7 @@ class Box extends React.Component {
             console.log(messageEncrypted);
             const blobfile = new Blob([messageEncrypted], {type: "text/plain;charset=utf-8"});
             console.log('blob: ', blobfile);
-            FileSaver.saveAs(blobfile, this.dataFileForEncrypt.name + ".cfe");
+            FileSaver.saveAs(blobfile, this.dataFileForEncrypt.originalName + ".cfe");
           }, 
           (error) => { console.log(error); }
         );
@@ -649,6 +669,8 @@ class Box extends React.Component {
   }
 
   loadFileForEncrypt(file){
+    Object.assign(this.dataFileForEncrypt, Utils.getOriginalDataFromName(file.name));
+    console.log('this.dataFileForEncrypt', this.dataFileForEncrypt);
     const readFile = Utils.readFileToB64(file);
     readFile.then((data) => {
       console.log('loaded file for encrypt to B64: ', data);
@@ -656,7 +678,6 @@ class Box extends React.Component {
     }, (err) => {
       console.log('error in loading file for encrypt: ', err);
     });
-    this.setDataFileForEncrypt(file.name);
   }
 
   loadCertificate(file){
@@ -794,6 +815,7 @@ class Box extends React.Component {
             <FormInput type="file" accept=".key" onChange={ event => { this.handleLoadFile(event, 'keyFIEL') }}></FormInput>
             <FormInput type="text" onChange={this.handlePassPhrase.bind(this)} value={this.state.passPhrase}></FormInput>
             <Button type="primary" onClick={this.handleSignEncrypt.bind(this)}><Spinner type="inverted" />firmando y encriptando</Button>
+            <Button type="primary" onClick={this.handleEncrypt.bind(this)}>encriptar</Button>
         </FormRow>
         </Col>
       </Row>
@@ -802,4 +824,9 @@ class Box extends React.Component {
   }
 }
 
-module.exports = Box;
+BoxEncrypt.propTypes = {
+  publicKey1: PropTypes.string.isRequired,
+  publicKey2: PropTypes.string.isRequired
+}
+
+module.exports = BoxEncrypt;

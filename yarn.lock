@@ -3639,7 +3639,7 @@ punycode@^1.2.4, punycode@^1.4.1:
   version "1.4.1"
   resolved "https://registry.yarnpkg.com/punycode/-/punycode-1.4.1.tgz#c0d5a63b2718800ad8e1eb0fa5269c84dd41845e"
 
-pvutils@^1.0.8, pvutils@latest:
+pvutils@latest:
   version "1.0.8"
   resolved "https://registry.yarnpkg.com/pvutils/-/pvutils-1.0.8.tgz#3354286bcf3f2fe044832cd21dfa5a7b7a6bd2c7"
   dependencies:
