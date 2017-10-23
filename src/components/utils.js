@@ -119,7 +119,7 @@ export default class Utils {
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
       reader.onload = event => {
-        const data = event.target.result;
+        const data = event.target.result;        
         try{
           const bytes = new Uint8Array(data);
           const keyArmored = openpgp.armor.encode(openpgp.enums.armor.private_key, bytes);
@@ -136,5 +136,28 @@ export default class Utils {
       }
       reader.readAsArrayBuffer(file);
     });
+  }
+
+  static getKey(obj,val){
+    return Object.keys(obj).find(key => { return obj[key] === val });
+  }
+
+  static toHexString(byteArray) {
+  return Array.from(byteArray, function(byte) {
+    return ('0' + (byte & 0xFF).toString(16)).slice(-2);
+  }).join('')
+  };
+
+  static byteArrayToLong(/*byte[]*/byteArray) {
+    var value = 0;
+    for ( var i = byteArray.length - 1; i >= 0; i--) {
+        value = (value * 256) + byteArray[i];
+    }
+
+    return value;
+  };
+
+  static getMD5(value){
+    return jsrsasign.crypto.Util.md5(value);
   }
 }

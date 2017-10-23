@@ -60,7 +60,6 @@ class BoxDecrypt extends React.Component{
 				if (this.dataFileForDecrypt.encryptExtension == 'cfe') this.unsign(cms);
 				else {
 					const blobfile = Utils.b64toBlob(cms.data, this.dataFileForDecrypt.typeFile);
-				  // const blobfile = new Blob([cms.data], {type: this.dataFileForDecrypt.typeFile});
       		FileSaver.saveAs(blobfile, this.dataFileForDecrypt.originalName);
 				}
 			},

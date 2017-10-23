@@ -1,6 +1,8 @@
 import * as jsrsasign from 'jsrsasign';
 import * as openpgp from 'openpgp';
 import Utils from './utils.js';
+// import * as moment from 'moment';
+import moment from 'moment';
 export default class sindejs {
     constructor(parameters = {}) {
         /**
@@ -169,12 +171,103 @@ export default class sindejs {
                 return response.arrayBuffer();
             }).then((arraybuffer) => {
                 const keyPEM = Utils._arrayBufferToPublicKeyPEM(arraybuffer);
-                const key1 = openpgp.key.readArmored(keyPEM).keys;
-                if (key1.length == 0) reject(Error('Error loading public key, url: ' + url));
-                resolve(key1);
+                const keyHeader = openpgp.key.readArmored(keyPEM);
+                const key = openpgp.key.readArmored(keyPEM).keys[0];
+                // console.log('keyHeader: ', keyHeader);
+                // console.log('KeyId: ', key.verifyPrimaryUser(keyHeader.keys)[0].keyid.toHex());
+                // console.log('KeyId from key: ', key.verifyPrimaryUser([key])[0].keyid.toHex());
+                // console.log(Utils.getKey(openpgp.enums.keyStatus, key.verifyPrimaryKey()));
+                if (key.verifyPrimaryKey() != openpgp.enums.keyStatus.valid)
+                  reject(Error('Error loading public key is not valid, url: ' + url));
+                if (key.length == 0) reject(Error('Error loading public key, url: ' + url));
+                resolve(key);
             }).catch((error) => {
-                reject(Error('Error loading public key, url: ' + error.message));
+                reject(Error('Error loading public key, url: ' + url + '\n' + error.message));
             });
         });
     }
+
+    static getInfoFromKeyGPG(key){
+      // console.log('openpgp: ', openpgp);
+      // console.log('key: ', key);
+
+      // console.log('UserID', key.getPrimaryUser().user.userId.userid);
+      // console.log('KeyId: ', key.verifyPrimaryUser([key])[0].keyid.toHex());
+      // console.log('Fingerprint: ', key.primaryKey.fingerprint);
+      // console.log('Algorithm: ', key.primaryKey.algorithm);
+
+      // // let _mpi = new openpgp.MPI();
+      // // _mpi.read(key.primaryKey.mpi);
+      // // console.log(_mpi);
+      // // console.log('Strength: ', key.primaryKey.mpi.byteLength());
+
+      // console.log('Date: ', key.primaryKey.created.getTime());
+      // console.log('Expiration (null not expiration): ', key.getExpirationTime());
+
+
+      const _expirationDate = key.getExpirationTime();
+      const info = {
+        userId: key.getPrimaryUser().user.userId.userid,
+        keyId: key.verifyPrimaryUser([key])[0].keyid.toHex(),
+        fingerprint: key.primaryKey.fingerprint,
+        algorithm: key.primaryKey.algorithm,
+        creationDate: key.primaryKey.created.getTime(),
+        expirationDate: (_expirationDate == null) ? "Never" : _expirationDate
+      };
+      return info;
+    }
+
+  static getPdfDefinition(keys, filesInfo){
+    console.log('getPdfDefinition init');
+    const _key1 = this.getInfoFromKeyGPG(keys.key1);
+    const _key2 = this.getInfoFromKeyGPG(keys.key2);
+    const _date = moment().format();
+    return {
+      styles: {
+        header: {
+          fontSize: 18,
+          bold: true,
+          alignment: 'center'
+        },
+        subheader: {
+          fontSize: 15,
+          bold: true
+        },
+      },
+      content: [
+        { text: 'ACUSE DE GENERACIÓN DE DOCUMENTO .CFEI', style: 'header' },
+        '*'.repeat(99) + '\n\n\n\n',
+        '*'.repeat(99) + '\n\n',
+        { text: 'ENCRIPTACIÓN PASO 1:\n\n', style: 'subheader' },
+        'Primary user-ID: ' + _key1.userId,
+        'Key-ID: ' + _key1.keyId,
+        'Fingerprint: ' + _key1.fingerprint,
+        'Algorithm: ' + _key1.algorithm,
+        // 'Strength in bit: ',
+        'Creation date: ' + moment(_key1.creationDate).format(),
+        'Expiration date: ' + _key1.expirationDate,
+        '\n\n',
+        '*'.repeat(99) + '\n\n',
+        { text: 'ENCRIPTACIÓN PASO 2:\n\n', style: 'subheader' },
+        'Primary user-ID: ' + _key2.userId,
+        'Key-ID: ' + _key2.keyId,
+        'Fingerprint: ' + _key2.fingerprint,
+        'Algorithm: ' + _key2.algorithm,
+        // 'Strength in bit: ',
+        'Creation date: ' + moment(_key2.creationDate).format(),
+        'Expiration date: ' + _key2.expirationDate,
+        '\n\n\n\n',
+        '*'.repeat(99) + '\n\n',
+        { text: 'RESUMEN:\n\n', style: 'subheader' },
+        'Fecha: ' + _date,
+        'Arcvhivo original: ' + filesInfo.originalName,
+        'Hash (MD5): ' + filesInfo.originalMD5,
+        'Tamaño: ' + filesInfo.originalSize,
+        '\n\n',
+        'Arcvhivo CFE: ' + filesInfo.name,
+        'Hash (MD5): ' + filesInfo.MD5,
+        'Tamaño: ' + filesInfo.size,
+      ]
+    }
+  }
 }

@@ -7,8 +7,12 @@ import Utils from '../utils.js';
 import UtilsFIEL from '../utils_fiel.js';
 import sindejs from '../sindejs.js';
 import * as FileSaver from 'file-saver';
-import * as pdfmake from 'pdfmake/build/pdfmake';
-import * as vfs from 'pdfmake/build/vfs_fonts.js';
+// import * as pdfMake from 'pdfmake/build/pdfmake';
+// import * as vfsFonts from 'pdfmake/build/vfs_fonts.js';
+import pdfMake from "pdfmake/build/pdfmake";
+import pdfFonts from "pdfmake/build/vfs_fonts";
+pdfMake.vfs = pdfFonts.pdfMake.vfs;
+
 import '../styles.min.css';
 import { Row, Col, FormRow, FormField, FormInput, FileUpload, Button, Spinner} from 'elemental';
 
@@ -19,8 +23,6 @@ class BoxEncrypt extends React.Component {
     this.messageForEncryptB64;
     this.publicKeys = {};
     this.privateKeys = {};
-
-
 
 
 
@@ -63,6 +65,20 @@ class BoxEncrypt extends React.Component {
       (key) => { this.publicKeys.key2 = key; console.log('_loadKey2'); console.log(this.publicKeys.key2); }, 
       (error) => { console.log(error) }
     );
+
+
+
+    const _dataFilesPDF = {
+          originalName: 'this.dataFileForEncrypt.originalName',
+          originalMD5: 'this.dataFileForEncrypt.md5',
+          originalSize: 'this.dataFileForEncrypt.size',
+          name: 'this.dataFileForEncrypt.originalName' + ".cfei",
+          MD5: Utils.getMD5('messageEncrypted'),
+          size: 'blobfile.size'
+        };
+    Promise.all([_loadPublicKey1, _loadPublicKey2]).then((values) => { 
+      console.log('docDefinition: ',sindejs.getPdfDefinition(this.publicKeys, _dataFilesPDF));
+    });
   }
 
   handlePublicKey(e) {
@@ -638,7 +654,16 @@ class BoxEncrypt extends React.Component {
         console.log(messageEncrypted);
         const blobfile = new Blob([messageEncrypted], {type: "text/plain;charset=utf-8"});
         console.log('this.dataFileForEncrypt', this.dataFileForEncrypt);
+        const dataFilesPDF = {
+          originalName: this.dataFileForEncrypt.originalName,
+          originalMD5: this.dataFileForEncrypt.md5,
+          originalSize: this.dataFileForEncrypt.sizeOriginalFile,
+          name: this.dataFileForEncrypt.originalName + ".cfei",
+          MD5: Utils.getMD5(messageEncrypted),
+          size: blobfile.size + 3
+        }
         FileSaver.saveAs(blobfile, this.dataFileForEncrypt.originalName + ".cfei");
+        pdfMake.createPdf(sindejs.getPdfDefinition(this.publicKeys, dataFilesPDF)).download(this.dataFileForEncrypt.originalName + '.acuseGeneracion.pdf');
       }, 
       (error) => { console.log(error); }
     );
@@ -659,6 +684,14 @@ class BoxEncrypt extends React.Component {
             console.log(messageEncrypted);
             const blobfile = new Blob([messageEncrypted], {type: "text/plain;charset=utf-8"});
             console.log('blob: ', blobfile);
+            const dataFilesPDF = {
+              originalName: this.dataFileForEncrypt.originalName,
+              originalMD5: this.dataFileForEncrypt.md5,
+              originalSize: this.dataFileForEncrypt.sizeOriginalFile,
+              name: this.dataFileForEncrypt.originalName + ".cfe",
+              MD5: Utils.getMD5(messageEncrypted),
+              size: blobfile.size + 3
+            }
             FileSaver.saveAs(blobfile, this.dataFileForEncrypt.originalName + ".cfe");
           }, 
           (error) => { console.log(error); }
@@ -670,11 +703,13 @@ class BoxEncrypt extends React.Component {
 
   loadFileForEncrypt(file){
     Object.assign(this.dataFileForEncrypt, Utils.getOriginalDataFromName(file.name));
-    console.log('this.dataFileForEncrypt', this.dataFileForEncrypt);
+    this.dataFileForEncrypt.sizeOriginalFile = file.size;
     const readFile = Utils.readFileToB64(file);
     readFile.then((data) => {
       console.log('loaded file for encrypt to B64: ', data);
       this.messageForEncryptB64 = data;
+      this.dataFileForEncrypt.md5 = Utils.getMD5(this.messageForEncryptB64);
+      console.log('this.dataFileForEncrypt: ',this.dataFileForEncrypt);
     }, (err) => {
       console.log('error in loading file for encrypt: ', err);
     });
