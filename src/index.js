@@ -1,5 +1,6 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
+import BoxTest from './components/box-test/index.jsx';
 import BoxEncrypt from './components/box-encrypt/index.jsx';
 import BoxDecrypt from './components/box-decrypt/index.jsx';
 
@@ -10,6 +11,8 @@ const _keys = {
 	}
 };
 
+ReactDOM.render(<BoxTest publicKey1={_keys.public.key1} publicKey2={_keys.public.key2} />, 
+	document.getElementById('boxtest'));
 ReactDOM.render(<BoxEncrypt publicKey1={_keys.public.key1} publicKey2={_keys.public.key2} />, 
 	document.getElementById('boxencrypt'));
 ReactDOM.render(<BoxDecrypt publicKey1={_keys.public.key1} publicKey2={_keys.public.key2} />, 

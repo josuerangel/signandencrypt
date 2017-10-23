@@ -256,7 +256,7 @@ export default class sindejs {
         // 'Strength in bit: ',
         'Creation date: ' + moment(_key2.creationDate).format(),
         'Expiration date: ' + _key2.expirationDate,
-        '\n\n\n\n',
+        '\n\n',
         '*'.repeat(99) + '\n\n',
         { text: 'RESUMEN:\n\n', style: 'subheader' },
         'Fecha: ' + _date,

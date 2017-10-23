@@ -17,13 +17,14 @@ export default class Utils {
    */
   static readFileForDecrypt(file){
     return new Promise((resolve, reject) => {
-      let message = { data: '', type : '' };
+      let message = { data: '', type : '', dataUTF8: '' };
       const reader = new FileReader();
       const openpgp = require('openpgp');
 
       // utf8 message
       reader.onload = event => {
         let data = event.target.result;
+        message.dataUTF8 = data;
         try{
           message.data = openpgp.message.readArmored(data);
           message.type = 'utf8';

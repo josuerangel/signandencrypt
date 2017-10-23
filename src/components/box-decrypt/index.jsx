@@ -60,6 +60,15 @@ class BoxDecrypt extends React.Component{
 				if (this.dataFileForDecrypt.encryptExtension == 'cfe') this.unsign(cms);
 				else {
 					const blobfile = Utils.b64toBlob(cms.data, this.dataFileForDecrypt.typeFile);
+	        const dataFilesPDF = {
+	          originalName: this.dataFileForDecrypt.originalName + "." + this.dataFileForDecrypt.encryptExtension,
+	          originalMD5: this.dataFileForDecrypt.MD5,
+	          originalSize: this.dataFileForDecrypt.sizeOriginalFile,
+	          name: this.dataFileForDecrypt.originalName,
+	          MD5: Utils.getMD5(cms.data),
+	          size: blobfile.size
+	        }
+	        pdfMake.createPdf(sindejs.getPdfDefinition(this.publicKeys, dataFilesPDF)).download(this.dataFileForDecrypt.originalName + '.acuseDesencriptacion.pdf');
       		FileSaver.saveAs(blobfile, this.dataFileForDecrypt.originalName);
 				}
 			},
@@ -71,9 +80,11 @@ class BoxDecrypt extends React.Component{
 
 	loadFileForDecrypt(file){
     Object.assign(this.dataFileForDecrypt, Utils.getOriginalDataFromName(file.name));
+    this.dataFileForDecrypt.sizeOriginalFile = file.size;
     const readFile = Utils.readFileForDecrypt(file);
     readFile.then((value) => {
       Object.assign(this.dataFileForDecrypt, value);
+      this.dataFileForDecrypt.MD5 = Utils.getMD5(this.dataFileForDecrypt.dataUTF8);
       console.log('loaded and parse file for decrypt: ', this.dataFileForDecrypt);
     }, (error) => {
       console.log(error);
