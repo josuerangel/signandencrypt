@@ -4,16 +4,17 @@ import BoxTest from './components/box-test/index.jsx';
 import BoxEncrypt from './components/box-encrypt/index.jsx';
 import BoxDecrypt from './components/box-decrypt/index.jsx';
 
-const _keys = {
-	public: {
+const options = {
+	publicKeys: {
 		key1 : 'http://localhost:8080/apps2012/filesPublication/QApgp1.gpg',
 		key2 : 'http://localhost:8080/apps2012/filesPublication/QApgp2.gpg'
-	}
+	},
+	language: 'sp'
 };
 
-ReactDOM.render(<BoxTest publicKey1={_keys.public.key1} publicKey2={_keys.public.key2} />, 
+ReactDOM.render(<BoxTest publicKey1={options.publicKeys.key1} publicKey2={options.publicKeys.key2} />, 
 	document.getElementById('boxtest'));
-ReactDOM.render(<BoxEncrypt publicKey1={_keys.public.key1} publicKey2={_keys.public.key2} />, 
+ReactDOM.render(<BoxEncrypt publicKey1={options.publicKeys.key1} publicKey2={options.publicKeys.key2} />, 
 	document.getElementById('boxencrypt'));
-ReactDOM.render(<BoxDecrypt publicKey1={_keys.public.key1} publicKey2={_keys.public.key2} />, 
+ReactDOM.render(<BoxDecrypt publicKey1={options.publicKeys.key1} publicKey2={options.publicKeys.key2} />, 
 	document.getElementById('boxdecrypt'));

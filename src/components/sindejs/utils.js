@@ -104,10 +104,20 @@ export default class Utils {
       return blob;
   };
 
+  /**
+   * Get original name, encryption extension and type for male blob file from selected file for decrypt
+   * @param  {string} name name from file selected with encryption extension
+   * @return {object}      values from original file
+   */
   static getOriginalDataFromName(name) {
     let firstDot = name.lastIndexOf(".");
     const _encryptExtension = name.substr(firstDot + 1);
-    const _nameFile = (_encryptExtension == 'cfe' || _encryptExtension == 'cfei') ? name.substr(0, firstDot) : name;
+    let _nameFile = name;
+    if (_encryptExtension == 'cfe' || _encryptExtension == 'cfei'){
+      const _name = name.substr(0, firstDot);
+      firstDot = _name.lastIndexOf(".");
+      _nameFile = _name.substr(0, firstDot + 4);
+    }
     const _typeFile = mime.lookup(_nameFile);
     return {
       originalName: _nameFile,
@@ -161,4 +171,46 @@ export default class Utils {
   static getMD5(value){
     return jsrsasign.crypto.Util.md5(value);
   }
+
+  static clone(obj) {
+    if (null == obj || "object" != typeof obj) return obj;
+    var copy = obj.constructor();
+    for (var attr in obj) {
+        if (obj.hasOwnProperty(attr)) copy[attr] = obj[attr];
+    }
+    return copy;
+  }
+
+  static cleanHeaderPEM(data){
+    console.log('cleanHeaderPEM: ', data);
+    let arrPem = data.split('\n');
+    arrPem.splice(0, 1);
+    let len = arrPem.length - 2;
+    arrPem.splice(len, 2);
+    return arrPem.join('\n');
+  }
+
+  static b64toBlob(b64Data, contentType, sliceSize) {
+    contentType = contentType || '';
+    sliceSize = sliceSize || 512;
+
+    const byteCharacters = atob(b64Data);
+    let byteArrays = [];
+
+    for (let offset = 0; offset < byteCharacters.length; offset += sliceSize) {
+      let slice = byteCharacters.slice(offset, offset + sliceSize);
+
+      let byteNumbers = new Array(slice.length);
+      for (let i = 0; i < slice.length; i++) {
+        byteNumbers[i] = slice.charCodeAt(i);
+      }
+
+      const byteArray = new Uint8Array(byteNumbers);
+
+      byteArrays.push(byteArray);
+    }
+
+    const blob = new Blob(byteArrays, {type: contentType});
+    return blob;
+  };
 }

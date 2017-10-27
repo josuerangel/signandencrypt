@@ -3,9 +3,11 @@ import PropTypes from 'prop-types';
 import mime from 'mime-types';
 import * as asn1js from "asn1js";
 import {ContentInfo, EncapsulatedContentInfo, SignedData } from 'pkijs';
-import Utils from '../utils.js';
-import UtilsFIEL from '../utils_fiel.js';
-import sindejs from '../sindejs.js';
+import sindejs from '../sindejs/sindejs.js';
+import Utils from '../sindejs/utils.js';
+import UtilsFIEL from '../sindejs/utils_fiel.js';
+// import * as sindejs from '../sindejs.js';
+
 import * as FileSaver from 'file-saver';
 // import * as pdfMake from 'pdfmake/build/pdfmake';
 // import * as vfsFonts from 'pdfmake/build/vfs_fonts.js';
@@ -13,7 +15,7 @@ import pdfMake from "pdfmake/build/pdfmake";
 import pdfFonts from "pdfmake/build/vfs_fonts";
 pdfMake.vfs = pdfFonts.pdfMake.vfs;
 
-import '../styles.min.css';
+import '../css/styles.min.css';
 import { Row, Col, FormRow, FormField, FormInput, FileUpload, Button, Spinner} from 'elemental';
 
 class BoxTest extends React.Component {
@@ -54,6 +56,7 @@ class BoxTest extends React.Component {
   }
 
   componentDidMount(){
+    console.log('sindejs: ', sindejs);
     const _loadPublicKey1 = sindejs.loadPublicKey('http://localhost:8080/apps2012/filesPublication/QApgp1.gpg');
     _loadPublicKey1.then(
       (key) => { this.publicKeys.key1 = key; console.log('_loadKey1'); console.log(this.publicKeys.key1); }, 
@@ -66,9 +69,8 @@ class BoxTest extends React.Component {
       (error) => { console.log(error) }
     );
 
-
-
     const _dataFilesPDF = {
+          encryptionExtension: '.cfei',
           originalName: 'this.dataFileForEncrypt.originalName',
           originalMD5: 'this.dataFileForEncrypt.md5',
           originalSize: 'this.dataFileForEncrypt.size',
@@ -76,8 +78,10 @@ class BoxTest extends React.Component {
           MD5: Utils.getMD5('messageEncrypted'),
           size: 'blobfile.size'
         };
-    Promise.all([_loadPublicKey1, _loadPublicKey2]).then((values) => { 
-      console.log('docDefinition: ',sindejs.getPdfDefinition(this.publicKeys, _dataFilesPDF));
+    Promise.all([_loadPublicKey1, _loadPublicKey2]).then((values) => {
+      // console.log('openpgp: ', openpgp);
+      console.log('sindejs: ', sindejs);
+      console.log('docDefinition: ',sindejs.getPdfDefinition(this.publicKeys, _dataFilesPDF, 'en'));
     });
   }
 

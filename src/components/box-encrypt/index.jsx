@@ -1,15 +1,15 @@
 import React from 'react';
 import PropTypes from 'prop-types';
-import Utils from '../utils.js';
-import UtilsFIEL from '../utils_fiel.js';
-import sindejs from '../sindejs.js';
+import sindejs from '../sindejs/sindejs.js';
+import Utils from '../sindejs/utils.js';
+import UtilsFIEL from '../sindejs/utils_fiel.js';
 import * as FileSaver from 'file-saver';
 import pdfMake from "pdfmake/build/pdfmake";
 import pdfFonts from "pdfmake/build/vfs_fonts";
 pdfMake.vfs = pdfFonts.pdfMake.vfs;
 
-import '../styles.min.css';
-import { Row, Col, FormRow, FormField, FormInput, FileUpload, Button, Spinner} from 'elemental';
+import '../css/styles.min.css';
+import { Row, Col, Form, FormRow, FormField, FormInput, FileUpload, Button, Spinner} from 'elemental';
 
 class BoxEncrypt extends React.Component {
   constructor(props) {
@@ -22,7 +22,11 @@ class BoxEncrypt extends React.Component {
     this.FIEL = {};
 
     this.state = {
-      passPhrase: '12345678a',
+      // passPhrase: '12345678a',
+      passPhrase: '',
+      selectedFile: false,
+      selectedCert: false,
+      selectedKey: false,
       nameFileToDecrypt: ''
     }
   }
@@ -47,29 +51,34 @@ class BoxEncrypt extends React.Component {
     this.setState({passPhrase: event.target.value});
   }
 
-  handleEncrypt(event){
-    event.preventDefault();
+  encryption(message, extension){
     console.log('start Encrypt');
-    const encryptProcess = sindejs.encrypt(this.messageForEncryptB64, this.publicKeys);
+    const encryptProcess = sindejs.encrypt(message, this.publicKeys);
     encryptProcess.then(
       (messageEncrypted) => {
         console.log('message encrypted');
         console.log(messageEncrypted);
+        const nameFile = this.dataFileForEncrypt.originalName + "." + extension;
         const blobfile = new Blob([messageEncrypted], {type: "text/plain;charset=utf-8"});
-        console.log('this.dataFileForEncrypt', this.dataFileForEncrypt);
         const dataFilesPDF = {
+          encryptionExtension: extension,
           originalName: this.dataFileForEncrypt.originalName,
           originalMD5: this.dataFileForEncrypt.md5,
           originalSize: this.dataFileForEncrypt.sizeOriginalFile,
-          name: this.dataFileForEncrypt.originalName + ".cfei",
+          name: nameFile,
           MD5: Utils.getMD5(messageEncrypted),
           size: blobfile.size + 3
         }
-        FileSaver.saveAs(blobfile, this.dataFileForEncrypt.originalName + ".cfei");
-        pdfMake.createPdf(sindejs.getPdfDefinition(this.publicKeys, dataFilesPDF)).download(this.dataFileForEncrypt.originalName + '.acuseGeneracion.pdf');
+        FileSaver.saveAs(blobfile, nameFile);
+        pdfMake.createPdf(sindejs.getPdfDefinition(this.publicKeys, dataFilesPDF, this.props.language)).download(nameFile + '.acuseGeneracion.pdf');
       }, 
       (error) => { console.log(error); }
-    );
+    );    
+  }
+
+  handleEncrypt(event){
+    event.preventDefault();
+    this.encryption(this.messageForEncryptB64, "cfei");
   }
 
   handleSignEncrypt(event){
@@ -80,26 +89,7 @@ class BoxEncrypt extends React.Component {
       (messageSigned)=> {
         console.log('messageSigned');
         console.log(messageSigned);
-        const encryptProcess = sindejs.encrypt(messageSigned, this.publicKeys);
-        encryptProcess.then(
-          (messageEncrypted) => {
-            console.log('message encrypted');
-            console.log(messageEncrypted);
-            const blobfile = new Blob([messageEncrypted], {type: "text/plain;charset=utf-8"});
-            console.log('blob: ', blobfile);
-            const dataFilesPDF = {
-              originalName: this.dataFileForEncrypt.originalName,
-              originalMD5: this.dataFileForEncrypt.md5,
-              originalSize: this.dataFileForEncrypt.sizeOriginalFile,
-              name: this.dataFileForEncrypt.originalName + ".cfe",
-              MD5: Utils.getMD5(messageEncrypted),
-              size: blobfile.size + 3
-            }
-            FileSaver.saveAs(blobfile, this.dataFileForEncrypt.originalName + ".cfe");
-            pdfMake.createPdf(sindejs.getPdfDefinition(this.publicKeys, dataFilesPDF)).download(this.dataFileForEncrypt.originalName + '.acuseGeneracion.pdf');            
-          }, 
-          (error) => { console.log(error); }
-        );
+        this.encryption(messageSigned, "cfe");
       }, 
       (error) => { console.log(error); }
     );
@@ -115,6 +105,7 @@ class BoxEncrypt extends React.Component {
       this.messageForEncryptB64 = data;
       this.dataFileForEncrypt.md5 = Utils.getMD5(this.messageForEncryptB64);
       console.log('this.dataFileForEncrypt: ',this.dataFileForEncrypt);
+      this.setState({ selectedFile: true });
     }, (err) => {
       console.log('error in loading file for encrypt: ', err);
     });
@@ -126,6 +117,7 @@ class BoxEncrypt extends React.Component {
       this.FIEL.certificatePem = data;
       console.log('loaded certificate: ');
       console.log(this.FIEL.certificatePem);
+      this.setState({ selectedCert: true });
     }, (err) => {
       console.log('error in loading certificate: ', err);
     });
@@ -137,6 +129,7 @@ class BoxEncrypt extends React.Component {
       this.FIEL.keyPEM = data;
       console.log('loaded key fiel: ');
       console.log(this.FIEL.keyPEM);
+      this.setState({ selectedKey: true });
     }, (err) => {
       console.log('error in loading key fiel: ', err);
     });
@@ -161,33 +154,57 @@ class BoxEncrypt extends React.Component {
   }
 
   render() {
+    const _buttonEncrypt = (this.state.selectedFile) 
+      ? <Button type="primary" onClick={this.handleEncrypt.bind(this)}>encriptar</Button>
+      : <Button type="primary" disabled onClick={this.handleEncrypt.bind(this)}>encriptar</Button>;
+
+    const _buttonSingEncrypt = (this.state.selectedFile && this.state.selectedCert && this.state.selectedKey && this.state.passPhrase != '')
+      ? <Button type="primary" onClick={this.handleSignEncrypt.bind(this)}>Firmar y Encriptar</Button>
+      : <Button type="primary" disabled onClick={this.handleSignEncrypt.bind(this)}>Firmar y Encriptar</Button>;
+
+    const _inputKey = (this.state.passPhrase == '')
+      ? <FormInput type="file" disabled accept=".key" onChange={ event => { this.handleLoadFile(event, 'keyFIEL') }}></FormInput>
+      : <FormInput type="file" accept=".key" onChange={ event => { this.handleLoadFile(event, 'keyFIEL') }}></FormInput>;
+
     return (
-      <div>
+
       <Row>
-        <Col sm="1/4">
+        <Col sm="1/2">
           <FormRow>
-            <FormField label="Archivo a encriptar"></FormField>
+            <FormField label="Archivo a encriptar">
+              <FormInput type="file" onChange={ event => { this.handleLoadFile(event, 'fileForEncrypt') } }></FormInput>
+            </FormField>
+          </FormRow>
+          <FormRow>
+            <FormField label="Certificado FIEL (.cer)">
+              <FormInput type="file" accept=".cer" onChange={ event => { this.handleLoadFile(event, 'certificate') }}></FormInput>
+            </FormField>
+          </FormRow>
+          <FormRow>
+            <FormField label="Llave privada FIEL (.key)">
+              <FormInput type="text" placeholder="Clave para la llave privada FIEL" onChange={this.handlePassPhrase.bind(this)} value={this.state.passPhrase}></FormInput>
+              {_inputKey}
+            </FormField>
+          </FormRow>          
+          <FormRow>
+            {_buttonSingEncrypt}
+            {_buttonEncrypt}
           </FormRow>
         </Col>
-        <Col sm="3/4">
-          <FormRow>
-            <FormInput type="file" onChange={ event => { this.handleLoadFile(event, 'fileForEncrypt') } }></FormInput>
-            <FormInput type="file" accept=".cer" onChange={ event => { this.handleLoadFile(event, 'certificate') }}></FormInput>
-            <FormInput type="file" accept=".key" onChange={ event => { this.handleLoadFile(event, 'keyFIEL') }}></FormInput>
-            <FormInput type="text" onChange={this.handlePassPhrase.bind(this)} value={this.state.passPhrase}></FormInput>
-            <Button type="primary" onClick={this.handleSignEncrypt.bind(this)}><Spinner type="inverted" />firmando y encriptando</Button>
-            <Button type="primary" onClick={this.handleEncrypt.bind(this)}>encriptar</Button>
-        </FormRow>
-        </Col>
       </Row>
-      </div>
+
     )
   }
-}
+};
+
+BoxEncrypt.defaultProps = {
+  language: 'en'
+};
 
 BoxEncrypt.propTypes = {
   publicKey1: PropTypes.string.isRequired,
-  publicKey2: PropTypes.string.isRequired
-}
+  publicKey2: PropTypes.string.isRequired,
+  language: PropTypes.string
+};
 
 module.exports = BoxEncrypt;
