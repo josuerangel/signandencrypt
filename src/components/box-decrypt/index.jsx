@@ -56,8 +56,14 @@ class BoxDecrypt extends React.Component{
   }
 
   makeFiles(dataB64, certificate){
+  	console.log(typeof dataB64);
   	const nameFile = this.dataFileForDecrypt.originalName + "." + this.dataFileForDecrypt.encryptExtension;
-		const blobfile = Utils.b64toBlob(dataB64, this.dataFileForDecrypt.typeFile);
+  	let blobfile;
+  	if (typeof dataB64 === 'string')
+			blobfile = Utils.b64toBlob(dataB64, this.dataFileForDecrypt.typeFile);
+		else
+			blobfile = new Blob([dataB64], {type: this.dataFileForDecrypt.typeFile});
+		console.log('makeFiles blobfile: ', blobfile);
 	  const dataFilesPDF = {
 	  	certInfo: certificate,
 	  	encryptionExtension: this.dataFileForDecrypt.encryptExtension,
