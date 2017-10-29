@@ -70,7 +70,7 @@ module.exports = {
       compress:{
         screw_ie8: true,
         warnings: false,
-        drop_console: true
+        // drop_console: true
       }
    }),
    // new webpack.optimize.DedupePlugin(),
@@ -84,6 +84,7 @@ module.exports = {
   },
   externals: {
     'react': 'React',
-    'react-dom': 'ReactDOM'
+    'react-dom': 'ReactDOM',
+    'jsrsasign': 'jsrsasign'
   }
 };

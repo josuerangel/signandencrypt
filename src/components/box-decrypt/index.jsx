@@ -1,7 +1,5 @@
 import React from 'react';
 import mime from 'mime-types';
-import * as asn1js from "asn1js";
-import {ContentInfo, EncapsulatedContentInfo, SignedData } from 'pkijs';
 import Utils from '../sindejs/utils.js';
 import sindejs from '../sindejs/sindejs.js';
 import * as FileSaver from 'file-saver';
@@ -62,7 +60,7 @@ class BoxDecrypt extends React.Component{
   	if (typeof dataB64 === 'string')
 			blobfile = Utils.b64toBlob(dataB64, this.dataFileForDecrypt.typeFile);
 		else
-			blobfile = new Blob([dataB64], {type: this.dataFileForDecrypt.typeFile});
+			blobfile = new Blob(dataB64, {type: this.dataFileForDecrypt.typeFile});
 		console.log('makeFiles blobfile: ', blobfile);
 	  const dataFilesPDF = {
 	  	certInfo: certificate,
@@ -89,7 +87,7 @@ class BoxDecrypt extends React.Component{
 					const _value = sindejs.getSignedData(cms);
 					_value.then(
 						(data) => {
-							console.log(data);
+							console.log('handleDecrypt getSignedData then: ', data);
 							this.makeFiles(data.messageB64, data.certInfo);
 						},
 						(error) => {
@@ -175,13 +173,14 @@ class BoxDecrypt extends React.Component{
 		const _inputKey2 = (this.state.passPhraseKey2 == '')
 			? <FormInput type="file" disabled accept=".gpg" onChange={ event => { this.handleLoadFile(event, 'privateKey2') } }></FormInput>
 			: <FormInput type="file" accept=".gpg" onChange={ event => { this.handleLoadFile(event, 'privateKey2') } }></FormInput>;
+		
 		return (
 			<div>
 				<Row>
 	        <Col sm="2/4">
 	          <FormRow>
 	            <FormField label="Archivo a desencriptar">
-	            	<FormInput type="file" onChange={ event => { this.handleLoadFile(event, 'fileForDecrypt') } }></FormInput>
+	            	<FormInput type="file" accept=".cfe, .cfei" onChange={ event => { this.handleLoadFile(event, 'fileForDecrypt') } }></FormInput>
 	            </FormField>
 	          </FormRow>
 	          <FormRow>

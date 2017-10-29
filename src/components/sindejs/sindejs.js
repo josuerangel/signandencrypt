@@ -2,6 +2,8 @@ import * as jsrsasign from 'jsrsasign';
 import * as openpgp from 'openpgp';
 import Utils from './utils.js';
 import moment from 'moment';
+import * as asn1js from "asn1js";
+import {ContentInfo, EncapsulatedContentInfo, SignedData } from 'pkijs';
 
 // export function sindejs() {
 //     console.log('new instance sindejs');
@@ -46,7 +48,7 @@ import moment from 'moment';
               certs: [cert],
               signerInfos: [{
                   hashAlg: 'sha256',
-                  sAttr: {},
+                  // sAttr: {},
                   signerCert: cert,
                   sigAlg: 'SHA256withRSA',
                   signerPrvKey: key
@@ -58,13 +60,20 @@ import moment from 'moment';
           try {
               const sd = jsrsasign.KJUR.asn1.cms.CMSUtil.newSignedData(param);
               resolve(sd.getPEM());
-          } catch (ex) {
-              reject(Error('Error sing: ' + e));
+          } catch (error) {
+              reject(Error('Error sindejs.sing: ' + error));
           }
       });
   }
 
   static getSignedData(cmsPem){
+    console.log('cmsPem: ', cmsPem);
+    console.log('getSignedData typeof: ', typeof cmsPem.data);
+    if (typeof cmsPem.data === 'string') return sindejs.getSignedDataFromUTF8(cmsPem);
+    else return sindejs.getSignedDataFromBinary(cmsPem);
+  }
+
+  static getSignedDataFromUTF8(cmsPem){
     return new Promise((resolve, reject) => {
       let result = {};
       try{
@@ -96,8 +105,69 @@ import moment from 'moment';
       catch(error){
         reject(Error('Error getSignedData\n' + error.message));
       }
-    });
-  }  
+    });    
+  }
+
+  static getSignedDataFromBinary(cms) {
+    return new Promise((resolve, reject) => {
+      try{
+        console.log('parseFile init');
+        console.log('cms: \n', cms);
+
+        const file = new File([cms.data], 'binaryDecrypt.temp');
+        console.log('file: ', file);
+        const reader = new FileReader();
+        reader.onload = (event) => sindejs.parseBinaryFile(event.target.result, resolve, reject);
+        reader.readAsArrayBuffer(file);
+      }catch(error){
+        reject(Error('Error getSignedDataFromBinary\n' + error.message));
+      }
+
+  });
+  }
+
+  static parseBinaryFile(arraybuffer, resolve, reject){
+    try{
+      const asn1 = asn1js.fromBER(arraybuffer);
+      console.log('asn1: ', asn1);
+
+      // const asn1 = asn1js.fromBER(certificateBuffer);
+      // const certificate = new Certificate({ schema: asn1.result });
+      // console.log('certificate: ', certificate);
+
+      const cmsContentSimpl = new ContentInfo({schema: asn1.result});
+      console.log("cmsContentSimpl: ", cmsContentSimpl);
+
+      const cmsSignedSimpl = new SignedData({schema: cmsContentSimpl.content});
+      console.log("cmsSignedSimpl: ", cmsSignedSimpl);
+
+      const cmsEncapsulatedSimpl = new EncapsulatedContentInfo(cmsSignedSimpl.encapContentInfo);
+      console.log('cmsEncapsulatedSimpl: ', cmsEncapsulatedSimpl);
+
+      let offset = 0;
+      const bytesContent = new Uint8Array(cmsEncapsulatedSimpl.eContent.valueBlock.value[0].valueBlock.valueHex, offset, ((offset + 65536) > cmsEncapsulatedSimpl.eContent.valueBlock.value[0].valueBlock.valueHex.byteLength)
+        ? (cmsEncapsulatedSimpl.eContent.valueBlock.value[0].valueBlock.valueHex.byteLength - offset)
+        : 65536);
+      console.log('bytesContent: ', bytesContent);
+
+      let bytesItem;
+      let arrBytes = cmsEncapsulatedSimpl.eContent.valueBlock.value.map((item) => {
+        bytesItem = new Uint8Array(item.valueBlock.valueHex, offset, ((offset + 65536) > item.valueBlock.valueHex.byteLength)
+          ? (item.valueBlock.valueHex.byteLength - offset)
+          : 65536);
+        return bytesItem;
+      });
+
+      resolve({ messageB64: arrBytes });
+    }
+    catch(error){
+      reject(Error('Error parseBinaryFile\n' + error.message));
+    }
+    ///let blobfile = new Blob(arrBytes, {type: this.dataFileForDecrypt.typeExtension});
+    //console.log('arr blob: ', blobfile);
+
+  }
+
 
   static encrypt(message, keys){
     return new Promise((resolve, reject) => {
@@ -136,7 +206,6 @@ import moment from 'moment';
         format: format
       };
 
-      // if (format == 'binary') options.format = 'binary';
       try{
         openpgp.decrypt(options).then((plaintext) => {
           messageForDecrypt = plaintext;
@@ -144,7 +213,6 @@ import moment from 'moment';
           console.log('after fisrt decrypt data');
           console.log(plaintext.data);
 
-        // if (this.privateKey1 != undefined) {
           let data = messageForDecrypt.data;
           console.log('second raw: ', data);
 
@@ -163,30 +231,8 @@ import moment from 'moment';
             console.log('second key', plaintext);
             console.log('binary to blob: ', plaintext.data);
             console.log('binary buffer to blob: ', plaintext.data.buffer);
-
             resolve(plaintext);
-
-            // const typeFile = mime.lookup(this.dataFileForDecrypt.name);
-            // console.log('typeFile: ', typeFile);
-            // this.dataFileForDecrypt.typeExtension = typeFile;
-
-            // let blobfile = new Blob([plaintext.data], {type: typeFile});
-            // console.log('blob: ', blobfile);
-
-            // let FileSaver = require('file-saver');
-
-            // if (this.dataFileForDecrypt.encryptExtension == 'cfei') {
-            //   FileSaver.saveAs(blobfile, this.dataFileForDecrypt.name);
-            // } else {
-            //   console.log('inside national');
-              // let file = new File([plaintext.data], this.dataFileForDecrypt.name, {type: typeFile});
-              // console.log('file: ', file);
-              // const reader = new FileReader();
-              // reader.onload = (event) => this.parseFile(event.target.result);
-              // reader.readAsArrayBuffer(file);
-            // }
           });
-        // }
         }); 
       }
       catch(e){

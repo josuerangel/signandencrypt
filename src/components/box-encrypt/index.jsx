@@ -32,13 +32,13 @@ class BoxEncrypt extends React.Component {
   }
 
   componentDidMount(){
-    const _loadPublicKey1 = sindejs.loadPublicKey('http://localhost:8080/apps2012/filesPublication/QApgp1.gpg');
+    const _loadPublicKey1 = sindejs.loadPublicKey(this.props.publicKey1);
     _loadPublicKey1.then(
       (key) => { this.publicKeys.key1 = key; console.log('_loadKey1'); console.log(this.publicKeys.key1); }, 
       (error) => { console.log(error) }
     );
 
-    const _loadPublicKey2 = sindejs.loadPublicKey('http://localhost:8080/apps2012/filesPublication/QApgp2.gpg');
+    const _loadPublicKey2 = sindejs.loadPublicKey(this.props.publicKey2);
     _loadPublicKey2.then(
       (key) => { this.publicKeys.key2 = key; console.log('_loadKey2'); console.log(this.publicKeys.key2); }, 
       (error) => { console.log(error) }
