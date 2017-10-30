@@ -25,8 +25,8 @@ class BoxDecrypt extends React.Component{
 			selectedFile: false,
 			selectedKey1: false,
 			selectedKey2: false,
-			passPhraseKey1: '',
-			passPhraseKey2: ''
+			passPhraseKey1: '12345678a',
+			passPhraseKey2: '12345678a'
 		}
 		/**
 		 * Object parsed with data for decrypt and type.

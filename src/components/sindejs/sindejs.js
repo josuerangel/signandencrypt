@@ -3,7 +3,8 @@ import * as openpgp from 'openpgp';
 import Utils from './utils.js';
 import moment from 'moment';
 import * as asn1js from "asn1js";
-import {ContentInfo, EncapsulatedContentInfo, SignedData } from 'pkijs';
+import { RSAPublicKey, ContentInfo, EncapsulatedContentInfo, SignedData } from 'pkijs';
+import { bufferToHexCodes } from "pvutils";
 
 // export function sindejs() {
 //     console.log('new instance sindejs');
@@ -158,7 +159,8 @@ import {ContentInfo, EncapsulatedContentInfo, SignedData } from 'pkijs';
         return bytesItem;
       });
 
-      resolve({ messageB64: arrBytes });
+      const certInfo = sindejs.getCertInfoFromPKIJSCert(cmsSignedSimpl);
+      resolve({ messageB64: arrBytes, certInfo: certInfo });
     }
     catch(error){
       reject(Error('Error parseBinaryFile\n' + error.message));
@@ -167,6 +169,163 @@ import {ContentInfo, EncapsulatedContentInfo, SignedData } from 'pkijs';
     //console.log('arr blob: ', blobfile);
 
   }
+
+  static getCertInfoFromPKIJSCert(signeddata){
+    console.log('getCertInfoFromPKIJSCert signeddata: ', signeddata);
+    let resultCertInfo = '';
+    const certificate = signeddata.certificates[0];
+
+    //region Put information about subject public key size
+    // let publicKeySize = "< unknown >";
+    
+    // if(certificate.subjectPublicKeyInfo.algorithm.algorithmId.indexOf("1.2.840.113549") !== (-1))
+    // {
+    //   const asn1PublicKey = asn1js.fromBER(certificate.subjectPublicKeyInfo.subjectPublicKey.valueBlock.valueHex);
+    //   const rsaPublicKey = new RSAPublicKey({ schema: asn1PublicKey.result });
+    //   console.log('rsaPublicKey: ', rsaPublicKey);
+    //   console.log(jsrsasign.ArrayBuffertohex(rsaPublicKey.modulus.valueBlock.valueHex));
+    //   const modulusView = new Uint8Array(rsaPublicKey.modulus.valueBlock.valueHex);
+    //   console.log('modulusView: ', modulusView);
+
+    //   let modulusBitLength = 0;
+      
+    //   if(modulusView[0] === 0x00)
+    //     modulusBitLength = (rsaPublicKey.modulus.valueBlock.valueHex.byteLength - 1) * 8;
+    //   else
+    //     modulusBitLength = rsaPublicKey.modulus.valueBlock.valueHex.byteLength * 8;
+      
+    //   publicKeySize = modulusBitLength.toString();
+    //   console.log('publicKeySize: ', publicKeySize);
+    // }
+
+    // console.log(jsrsasign.ArrayBuffertohex(certificate.signatureValue.valueBlock.valueHex));
+    // resultCertInfo += 'siganture value: ' + bufferToHexCodes(signeddata.signerInfos[0].signature.valueBlock.valueHex);
+    
+
+    resultCertInfo += 'SerialNumber: ' + bufferToHexCodes(certificate.serialNumber.valueBlock.valueHex);
+
+    //region Put information about X.509 certificate issuer
+    resultCertInfo += '\nIssuer: '
+    const rdnmap = {
+      "2.5.4.6": "C",
+      "2.5.4.10": "OU",
+      "2.5.4.11": "O",
+      "2.5.4.3": "CN",
+      "2.5.4.7": "L",
+      "2.5.4.8": "S",
+      "2.5.4.12": "T",
+      "2.5.4.42": "GN",
+      "2.5.4.43": "I",
+      "2.5.4.4": "SN",
+      "1.2.840.113549.1.9.1": "E-mail"
+    };
+    
+    for(const typeAndValue of certificate.issuer.typesAndValues)
+    {
+      let typeval = rdnmap[typeAndValue.type];
+      if(typeof typeval === "undefined")
+        typeval = typeAndValue.type;
+      
+      const subjval = typeAndValue.value.valueBlock.value;
+      
+      // const row = issuerTable.insertRow(issuerTable.rows.length);
+      // const cell0 = row.insertCell(0);
+      // cell0.innerHTML = typeval;
+      // const cell1 = row.insertCell(1);
+      // cell1.innerHTML = subjval;
+      
+      resultCertInfo += typeval + '=' + subjval + ',';
+      //console.log(resultCertInfo);
+    }
+    //endregion
+    
+    // dates
+    resultCertInfo += '\nStart Date: ' + certificate.notBefore.value.toUTCString();
+    resultCertInfo += '\nFinal Date: ' + certificate.notAfter.value.toUTCString();
+
+  //region Put information about X.509 certificate subject
+    resultCertInfo += '\nSubject: ';
+    for(const typeAndValue of certificate.subject.typesAndValues)
+    {
+      let typeval = rdnmap[typeAndValue.type];
+      if(typeof typeval === "undefined")
+        typeval = typeAndValue.type;
+      
+      const subjval = typeAndValue.value.valueBlock.value;
+      
+      // const row = subjectTable.insertRow(subjectTable.rows.length);
+      // const cell0 = row.insertCell(0);
+      // cell0.innerHTML = typeval;
+      // const cell1 = row.insertCell(1);
+      // cell1.innerHTML = subjval;
+      resultCertInfo += typeval + '=' + subjval + ',';
+    }
+    //endregion
+
+    //region Put information about signature algorithm
+    const algomap = {
+      "1.2.840.113549.1.1.2": "MD2 with RSA",
+      "1.2.840.113549.1.1.4": "MD5 with RSA",
+      "1.2.840.10040.4.3": "SHA1 with DSA",
+      "1.2.840.10045.4.1": "SHA1 with ECDSA",
+      "1.2.840.10045.4.3.2": "SHA256 with ECDSA",
+      "1.2.840.10045.4.3.3": "SHA384 with ECDSA",
+      "1.2.840.10045.4.3.4": "SHA512 with ECDSA",
+      "1.2.840.113549.1.1.10": "RSA-PSS",
+      "1.2.840.113549.1.1.5": "SHA1 with RSA",
+      "1.2.840.113549.1.1.14": "SHA224 with RSA",
+      "1.2.840.113549.1.1.11": "SHA256 with RSA",
+      "1.2.840.113549.1.1.12": "SHA384 with RSA",
+      "1.2.840.113549.1.1.13": "SHA512 with RSA"
+    };       // array mapping of common algorithm OIDs and corresponding types
+    
+    let signatureAlgorithm = algomap[certificate.signatureAlgorithm.algorithmId];
+    if(typeof signatureAlgorithm === "undefined")
+      signatureAlgorithm = certificate.signatureAlgorithm.algorithmId;
+    else
+      signatureAlgorithm = `${signatureAlgorithm} (${certificate.signatureAlgorithm.algorithmId})`;
+    
+    resultCertInfo += '\nSignature Algorithm: ' + signatureAlgorithm;
+
+
+    // loop to get extensions
+    resultCertInfo += '\nExtensions: ';
+    let extenval = '';
+    for(let i = 0; i < certificate.extensions.length; i++)
+    {
+      // OID map
+      const extenmap = {
+        "2.5.29.1": "old Authority Key Identifier",
+        "2.5.29.2": "old Primary Key Attributes",
+        "2.5.29.3": "Certificate Policies",
+        "2.5.29.4": "Primary Key Usage Restriction",
+        "2.5.29.9": "Subject Directory Attributes",
+        "2.5.29.14": "Subject Key Identifier",
+        "2.5.29.15": "Key Usage",
+        "2.5.29.16": "Private Key Usage Period",
+        "2.5.29.17": "Subject Alternative Name",
+        "2.5.29.18": "Issuer Alternative Name",
+        "2.5.29.19": "Basic Constraints",
+        "2.5.29.28": "Issuing Distribution Point",
+        "2.5.29.29": "Certificate Issuer",
+        "2.5.29.30": "Name Constraints",
+        "2.5.29.31": "CRL Distribution Points",
+        "2.5.29.32": "Certificate Policies",
+        "2.5.29.33": "Policy Mappings",
+        "2.5.29.35": "Authority Key Identifier",
+        "2.5.29.36": "Policy Constraints",
+        "2.5.29.37": "Extended key usage",
+        "2.5.29.54": "X.509 version 3 certificate extension Inhibit Any-policy"
+      };
+      extenval = extenmap[certificate.extensions[i].extnID];
+      console.log('extenval: ',extenval);
+      resultCertInfo += extenval + ',';
+    };
+
+    // resultCertInfo += 'algorithm id: ' + certificate.signatureAlgorithm.algorithm_id;
+
+    return resultCertInfo;
+  };
 
 
   static encrypt(message, keys){
