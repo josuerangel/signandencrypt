@@ -6,35 +6,26 @@ import * as asn1js from "asn1js";
 import { RSAPublicKey, ContentInfo, EncapsulatedContentInfo, SignedData } from 'pkijs';
 import { bufferToHexCodes } from "pvutils";
 
-// export function sindejs() {
-//     console.log('new instance sindejs');
-//     if (!(this instanceof sindejs)){
-//       return new sindejs();
-//     }
-// }
-
- export default class sindejs {
-//class sindejs {
+export default class sindejs {
   constructor(parameters = {}) {
       /**
-       * @file {File}
-       * @description file for parse to decrypt
+       * @fetchInit {JSON}
+       * @Configurations for fetch to get public keys
        */
-      // this.file = parameters.file;
       this.fetchInit = {
           method: 'GET',
           headers: new Headers(),
           mode: 'cors',
           cache: 'default'
       };
-      self = this;
-      console.log(openpgp);
   };
 
   /**
-   * Read and parse file to B64
-   * @param {(File)} file for parse to decrypt
-   * @returns {Promise} Promise return openpgp message parsed
+   * Sing message with openpgpjs
+   * @param  {String} message message for sign, most common in B64
+   * @param  {String} cert    PEM certificate
+   * @param  {String} key     PEM key without encryption
+   * @return {String}         message encrypted
    */
   static sing(message, cert, key) {
       return new Promise((resolve, reject) => {
@@ -49,15 +40,12 @@ import { bufferToHexCodes } from "pvutils";
               certs: [cert],
               signerInfos: [{
                   hashAlg: 'sha256',
-                  // sAttr: {},
+                  sAttr: {},
                   signerCert: cert,
                   sigAlg: 'SHA256withRSA',
                   signerPrvKey: key
               }]
           };
-          // if (f1.signingtime1.checked) {
-          //   param.signerInfos[0].sAttr.SigningTime = {};
-          // }
           try {
               const sd = jsrsasign.KJUR.asn1.cms.CMSUtil.newSignedData(param);
               resolve(sd.getPEM());
@@ -67,6 +55,11 @@ import { bufferToHexCodes } from "pvutils";
       });
   }
 
+  /**
+   * Check if message is string for execute new decryption.
+   * @param  {Object/String} cmsPem message to get original data.
+   * @return {Object}        Object with original data in B64 and certificate information for PDF.
+   */
   static getSignedData(cmsPem){
     console.log('cmsPem: ', cmsPem);
     console.log('getSignedData typeof: ', typeof cmsPem.data);
@@ -74,6 +67,11 @@ import { bufferToHexCodes } from "pvutils";
     else return sindejs.getSignedDataFromBinary(cmsPem);
   }
 
+  /**
+   * Get original data from new encryption
+   * @param  {String} cmsPem CMS PEM
+   * @return {Object}        Object with original data in B64 and certificate information for PDF.
+   */
   static getSignedDataFromUTF8(cmsPem){
     return new Promise((resolve, reject) => {
       let result = {};
@@ -109,6 +107,11 @@ import { bufferToHexCodes } from "pvutils";
     });    
   }
 
+  /**
+   * Get original data from files encrypted with applet
+   * @param  {Object} cms Binary object
+   * @return {Object}     Object with original data in binary format and certificate information for PDF.
+   */
   static getSignedDataFromBinary(cms) {
     return new Promise((resolve, reject) => {
       try{
@@ -123,18 +126,20 @@ import { bufferToHexCodes } from "pvutils";
       }catch(error){
         reject(Error('Error getSignedDataFromBinary\n' + error.message));
       }
-
-  });
+    });
   }
 
+  /**
+   * Get original data and certificate information
+   * @param  {ArrayBuffer} arraybuffer CMS after decryption
+   * @param  {Function} resolve     Function resolve
+   * @param  {Function} reject      Function reject
+   * @return {Object}     Object with original data in binary format and certificate information for PDF.
+   */
   static parseBinaryFile(arraybuffer, resolve, reject){
     try{
       const asn1 = asn1js.fromBER(arraybuffer);
       console.log('asn1: ', asn1);
-
-      // const asn1 = asn1js.fromBER(certificateBuffer);
-      // const certificate = new Certificate({ schema: asn1.result });
-      // console.log('certificate: ', certificate);
 
       const cmsContentSimpl = new ContentInfo({schema: asn1.result});
       console.log("cmsContentSimpl: ", cmsContentSimpl);
@@ -165,42 +170,28 @@ import { bufferToHexCodes } from "pvutils";
     catch(error){
       reject(Error('Error parseBinaryFile\n' + error.message));
     }
-    ///let blobfile = new Blob(arrBytes, {type: this.dataFileForDecrypt.typeExtension});
-    //console.log('arr blob: ', blobfile);
-
   }
 
+  /**
+   * Rean certificate from PEM
+   * @param  {String} certPem PEM Certificate
+   * @return {String}         Information about certificate
+   */
+  static getCertInfo(certPem){
+    const certificate = new jsrsasign.X509();
+    certificate.readCertPEM(certPem);
+    return certificate.getInfo();
+  }
+
+  /**
+   * Read information about certificate from PKIJS.SignedData class
+   * @param  {PKIJS.SignedData} signeddata Class PKIJS.SignedData after decryption.
+   * @return {String}            Information about certificate
+   */
   static getCertInfoFromPKIJSCert(signeddata){
     console.log('getCertInfoFromPKIJSCert signeddata: ', signeddata);
     let resultCertInfo = '';
-    const certificate = signeddata.certificates[0];
-
-    //region Put information about subject public key size
-    // let publicKeySize = "< unknown >";
-    
-    // if(certificate.subjectPublicKeyInfo.algorithm.algorithmId.indexOf("1.2.840.113549") !== (-1))
-    // {
-    //   const asn1PublicKey = asn1js.fromBER(certificate.subjectPublicKeyInfo.subjectPublicKey.valueBlock.valueHex);
-    //   const rsaPublicKey = new RSAPublicKey({ schema: asn1PublicKey.result });
-    //   console.log('rsaPublicKey: ', rsaPublicKey);
-    //   console.log(jsrsasign.ArrayBuffertohex(rsaPublicKey.modulus.valueBlock.valueHex));
-    //   const modulusView = new Uint8Array(rsaPublicKey.modulus.valueBlock.valueHex);
-    //   console.log('modulusView: ', modulusView);
-
-    //   let modulusBitLength = 0;
-      
-    //   if(modulusView[0] === 0x00)
-    //     modulusBitLength = (rsaPublicKey.modulus.valueBlock.valueHex.byteLength - 1) * 8;
-    //   else
-    //     modulusBitLength = rsaPublicKey.modulus.valueBlock.valueHex.byteLength * 8;
-      
-    //   publicKeySize = modulusBitLength.toString();
-    //   console.log('publicKeySize: ', publicKeySize);
-    // }
-
-    // console.log(jsrsasign.ArrayBuffertohex(certificate.signatureValue.valueBlock.valueHex));
-    // resultCertInfo += 'siganture value: ' + bufferToHexCodes(signeddata.signerInfos[0].signature.valueBlock.valueHex);
-    
+    const certificate = signeddata.certificates[0];    
 
     resultCertInfo += 'SerialNumber: ' + bufferToHexCodes(certificate.serialNumber.valueBlock.valueHex);
 
@@ -227,15 +218,7 @@ import { bufferToHexCodes } from "pvutils";
         typeval = typeAndValue.type;
       
       const subjval = typeAndValue.value.valueBlock.value;
-      
-      // const row = issuerTable.insertRow(issuerTable.rows.length);
-      // const cell0 = row.insertCell(0);
-      // cell0.innerHTML = typeval;
-      // const cell1 = row.insertCell(1);
-      // cell1.innerHTML = subjval;
-      
       resultCertInfo += typeval + '=' + subjval + ',';
-      //console.log(resultCertInfo);
     }
     //endregion
     
@@ -243,7 +226,7 @@ import { bufferToHexCodes } from "pvutils";
     resultCertInfo += '\nStart Date: ' + certificate.notBefore.value.toUTCString();
     resultCertInfo += '\nFinal Date: ' + certificate.notAfter.value.toUTCString();
 
-  //region Put information about X.509 certificate subject
+    //region Put information about X.509 certificate subject
     resultCertInfo += '\nSubject: ';
     for(const typeAndValue of certificate.subject.typesAndValues)
     {
@@ -252,12 +235,6 @@ import { bufferToHexCodes } from "pvutils";
         typeval = typeAndValue.type;
       
       const subjval = typeAndValue.value.valueBlock.value;
-      
-      // const row = subjectTable.insertRow(subjectTable.rows.length);
-      // const cell0 = row.insertCell(0);
-      // cell0.innerHTML = typeval;
-      // const cell1 = row.insertCell(1);
-      // cell1.innerHTML = subjval;
       resultCertInfo += typeval + '=' + subjval + ',';
     }
     //endregion
@@ -322,12 +299,16 @@ import { bufferToHexCodes } from "pvutils";
       resultCertInfo += extenval + ',';
     };
 
-    // resultCertInfo += 'algorithm id: ' + certificate.signatureAlgorithm.algorithm_id;
-
     return resultCertInfo;
   };
 
 
+  /**
+   * Encrypt a message with openpgp.js
+   * @param  {String} message Message to encrypt
+   * @param  {Object} keys    Public keys to encrypt
+   * @return {String}         Message encrypted
+   */
   static encrypt(message, keys){
     return new Promise((resolve, reject) => {
       console.log('encrypt init');
@@ -355,6 +336,14 @@ import { bufferToHexCodes } from "pvutils";
     });
   }
 
+  /**
+   * Decrypt a message with openpgp.js
+   * @param  {String} message     Message to decrypt
+   * @param  {String} format      binary or uft8
+   * @param  {Object} publicKeys  Public keys for decrypt
+   * @param  {Object} privateKeys Private keys for decrypt
+   * @return {String}             Message decrypted
+   */
   static decrypt(message, format, publicKeys, privateKeys){
     return new Promise((resolve, reject) => {
       let messageForDecrypt;
@@ -413,10 +402,6 @@ import { bufferToHexCodes } from "pvutils";
         const keyPEM = Utils._arrayBufferToPublicKeyPEM(arraybuffer);
         const keyHeader = openpgp.key.readArmored(keyPEM);
         const key = openpgp.key.readArmored(keyPEM).keys[0];
-        // console.log('keyHeader: ', keyHeader);
-        // console.log('KeyId: ', key.verifyPrimaryUser(keyHeader.keys)[0].keyid.toHex());
-        // console.log('KeyId from key: ', key.verifyPrimaryUser([key])[0].keyid.toHex());
-        // console.log(Utils.getKey(openpgp.enums.keyStatus, key.verifyPrimaryKey()));
         if (key.verifyPrimaryKey() != openpgp.enums.keyStatus.valid)
           reject(Error('Error loading public key is not valid, url: ' + url));
         if (key.length == 0) reject(Error('Error loading public key, url: ' + url));
@@ -427,6 +412,11 @@ import { bufferToHexCodes } from "pvutils";
     });
   }
 
+  /**
+   * Det data from PGP key
+   * @param  {OPENPGP.KEY} key OPENPGP.KEY class
+   * @return {Object}     Information about the KEY
+   */
   static getInfoFromKeyGPG(key){
     const _expirationDate = key.getExpirationTime();
     const info = {
@@ -440,6 +430,13 @@ import { bufferToHexCodes } from "pvutils";
     return info;
   }
 
+  /**
+   * Get key template for PDF in json
+   * @param  {Object} keyData Data about key
+   * @param  {Object} lng     JSON Object with message
+   * @param  {Number} number  Number of key
+   * @return {Object}         JSON with structure for PDF
+   */
   static getStructureKey(keyData, lng, number){
     return [
       '*'.repeat(99) + '\n\n',
@@ -454,6 +451,14 @@ import { bufferToHexCodes } from "pvutils";
     ];
   }
   
+  /**
+   * Get JSON structur for makePDF
+   * @param  {OPENPGP.KEY} keys   OPENPGP.KEY class
+   * @param  {Object} filesInfo   JSON with info about files to encrypt or decrypt
+   * @param  {String} languaje    Languaje 'sp' or 'en'
+   * @param  {String} typeProcess Type of process for mesage in PDF
+   * @return {Object}             JSON objecto for makePDF
+   */
   static getPdfDefinition(keys, filesInfo, languaje, typeProcess = 'encrypt'){
     console.log('getPdfDefinition init', languaje, typeProcess);
     const _key1 = this.getInfoFromKeyGPG(keys.key1);

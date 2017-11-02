@@ -22,7 +22,6 @@ class BoxEncrypt extends React.Component {
     this.FIEL = {};
 
     this.state = {
-      // passPhrase: '12345678a',
       passPhrase: '',
       selectedFile: false,
       selectedCert: false,
@@ -51,7 +50,7 @@ class BoxEncrypt extends React.Component {
     this.setState({passPhrase: event.target.value});
   }
 
-  encryption(message, extension){
+  encryption(message, extension, certificate){
     console.log('start Encrypt');
     const encryptProcess = sindejs.encrypt(message, this.publicKeys);
     encryptProcess.then(
@@ -61,6 +60,7 @@ class BoxEncrypt extends React.Component {
         const nameFile = this.dataFileForEncrypt.originalName + "." + extension;
         const blobfile = new Blob([messageEncrypted], {type: "text/plain;charset=utf-8"});
         const dataFilesPDF = {
+          certInfo: certificate,
           encryptionExtension: extension,
           originalName: this.dataFileForEncrypt.originalName,
           originalMD5: this.dataFileForEncrypt.md5,
@@ -89,7 +89,8 @@ class BoxEncrypt extends React.Component {
       (messageSigned)=> {
         console.log('messageSigned');
         console.log(messageSigned);
-        this.encryption(messageSigned, "cfe");
+        console.log('certinfo\n', sindejs.getCertInfo(this.FIEL.certificatePem));
+        this.encryption(messageSigned, "cfe", sindejs.getCertInfo(this.FIEL.certificatePem));
       }, 
       (error) => { console.log(error); }
     );

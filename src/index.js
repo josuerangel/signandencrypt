@@ -6,8 +6,8 @@ import BoxDecrypt from './components/box-decrypt/index.jsx';
 
 const options = {
 	publicKeys: {
-		key1 : 'http://localhost:8080/apps2012/filesPublication/QApgp1.gpg',
-		key2 : 'http://localhost:8080/apps2012/filesPublication/QApgp2.gpg'
+		key1 : 'http://localhost:8080/apps2012/vendors/sindejs/QApgp1.gpg',
+		key2 : 'http://localhost:8080/apps2012/vendors/sindejs/QApgp2.gpg'
 	},
 	language: 'sp'
 };

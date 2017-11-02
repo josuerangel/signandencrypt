@@ -57,13 +57,13 @@ class BoxTest extends React.Component {
 
   componentDidMount(){
     console.log('sindejs: ', sindejs);
-    const _loadPublicKey1 = sindejs.loadPublicKey('http://localhost:8080/apps2012/filesPublication/QApgp1.gpg');
+    const _loadPublicKey1 = sindejs.loadPublicKey(this.props.publicKey1);
     _loadPublicKey1.then(
       (key) => { this.publicKeys.key1 = key; console.log('_loadKey1'); console.log(this.publicKeys.key1); }, 
       (error) => { console.log(error) }
     );
 
-    const _loadPublicKey2 = sindejs.loadPublicKey('http://localhost:8080/apps2012/filesPublication/QApgp2.gpg');
+    const _loadPublicKey2 = sindejs.loadPublicKey(this.props.publicKey2);
     _loadPublicKey2.then(
       (key) => { this.publicKeys.key2 = key; console.log('_loadKey2'); console.log(this.publicKeys.key2); }, 
       (error) => { console.log(error) }
@@ -731,6 +731,18 @@ class BoxTest extends React.Component {
     });
   }
 
+
+  loadCertificateIssuer(file){
+    const readFile = UtilsFIEL.readCertificateToPEM(file);
+    readFile.then((data) => {
+      this.FIEL.certificateIssuer = data;
+      console.log('loaded certificate issuer: ');
+      console.log(this.FIEL.certificateIssuer);
+    }, (err) => {
+      console.log('error in loading certificate issuer: ', err);
+    });
+  }
+
   loadKeyFIEL(file){
     const readFile = UtilsFIEL.readKeyFIELToPEM(file, this.state.passPhrase);
     readFile.then((data) => {
@@ -752,6 +764,9 @@ class BoxTest extends React.Component {
       case 'certificate':
         this.loadCertificate(file);
         break;
+      case 'certificateIssuer':
+        this.loadCertificateIssuer(file);
+        break;        
       case 'keyFIEL':
         this.loadKeyFIEL(file);
         break;
@@ -760,11 +775,115 @@ class BoxTest extends React.Component {
     }
   }
 
+  checkStatus(response) {
+    console.log('checkStatus.....');
+    if (response.status >= 200 && response.status < 300) {
+      return response;
+    } else {
+      var error = new Error(response.statusText);
+      error.response = response;
+      throw error;
+    }
+  }  
+
+  validateCertificate(event){
+    // generate OCSP request using sha1 algorithnm by default.
+    let hReq = this.jsrsasign.KJUR.asn1.ocsp.OCSPUtil.getRequestHex(this.FIEL.certificateIssuer, this.FIEL.certificatePem);
+    console.log('hReq: ', hReq);
+
+    let _abReq = this.jsrsasign.hextoArrayBuffer(hReq);
+    let _blob = new Blob([_abReq], {type: "octet/stream"});
+
+    let _headers = new Headers();
+    _headers.append("Content-Type", "application/ocsp-request");
+    _headers.append("Accept","application/ocsp-response");
+
+    let _data = new FormData();
+    _data.append("hexOSCP", hReq);
+
+    let _options = {
+      method: 'GET',
+//      headers: _headers,
+      mode: 'cors',
+      //body: _data
+    };
+
+    const _url = "../../SvtValidateCertificate?hexOSCP=" + hReq;
+    let _request = new Request(_url, _options);
+
+    fetch(_url, _options).then(this.checkStatus).then((response) => {
+      console.log(response);
+    });
+  }
+
+  validateCertificateCAPEM(event){
+    console.log('certCA: ', this.certCA);
+    // generate OCSP request using sha1 algorithnm by default.
+    let hReq = this.jsrsasign.KJUR.asn1.ocsp.OCSPUtil.getRequestHex(this.certCA, this.FIEL.certificatePem);
+    console.log('hReq: ', hReq);
+
+    let _abReq = this.jsrsasign.hextoArrayBuffer(hReq);
+    let _blob = new Blob([_abReq], {type: "octet/stream"});
+
+    let _headers = new Headers();
+    _headers.append("Content-Type", "application/ocsp-request");
+    _headers.append("Accept","application/ocsp-response");
+
+    let _data = new FormData();
+    _data.append("hexOSCP", hReq);
+
+    let _options = {
+      method: 'GET',
+//      headers: _headers,
+      mode: 'cors',
+      //body: _data
+    };
+
+    const _url = "../../SvtValidateCertificate?hexOSCP=" + hReq;
+    let _request = new Request(_url, _options);
+
+    fetch(_url, _options).then(this.checkStatus).then((response) => {
+      console.log(response);
+    });
+  }  
+
   render() {
     return (
       <div>
         Decrypt
         <br></br>
+        <textarea ref={(input) => this.certCA = input.value } id="certCA" name="certCA" rows="10" cols="65">
+-----BEGIN CERTIFICATE-----
+MIIFHjCCBAagAwIBAgIUMDAwMDAwMDAwMDAwMDAwMDEwNDMwDQYJKoZIhvcNAQEF
+BQAwggE2MTgwNgYDVQQDDC9BLkMuIGRlbCBTZXJ2aWNpbyBkZSBBZG1pbmlzdHJh
+Y2nDs24gVHJpYnV0YXJpYTEvMC0GA1UECgwmU2VydmljaW8gZGUgQWRtaW5pc3Ry
+YWNpw7NuIFRyaWJ1dGFyaWExHzAdBgkqhkiG9w0BCQEWEGFjb2RzQHNhdC5nb2Iu
+bXgxJjAkBgNVBAkMHUF2LiBIaWRhbGdvIDc3LCBDb2wuIEd1ZXJyZXJvMQ4wDAYD
+VQQRDAUwNjMwMDELMAkGA1UEBhMCTVgxGTAXBgNVBAgMEERpc3RyaXRvIEZlZGVy
+YWwxEzARBgNVBAcMCkN1YXVodGVtb2MxMzAxBgkqhkiG9w0BCQIMJFJlc3BvbnNh
+YmxlOiBGZXJuYW5kbyBNYXJ0w61uZXogQ29zczAeFw0wODEwMTYxODI5NDBaFw0x
+NjEwMTQxODI5NDBaMIIBNjE4MDYGA1UEAwwvQS5DLiBkZWwgU2VydmljaW8gZGUg
+QWRtaW5pc3RyYWNpw7NuIFRyaWJ1dGFyaWExLzAtBgNVBAoMJlNlcnZpY2lvIGRl
+IEFkbWluaXN0cmFjacOzbiBUcmlidXRhcmlhMR8wHQYJKoZIhvcNAQkBFhBhY29k
+c0BzYXQuZ29iLm14MSYwJAYDVQQJDB1Bdi4gSGlkYWxnbyA3NywgQ29sLiBHdWVy
+cmVybzEOMAwGA1UEEQwFMDYzMDAxCzAJBgNVBAYTAk1YMRkwFwYDVQQIDBBEaXN0
+cml0byBGZWRlcmFsMRMwEQYDVQQHDApDdWF1aHRlbW9jMTMwMQYJKoZIhvcNAQkC
+DCRSZXNwb25zYWJsZTogRmVybmFuZG8gTWFydMOtbmV6IENvc3MwggEiMA0GCSqG
+SIb3DQEBAQUAA4IBDwAwggEKAoIBAQDlkFD9MrqF4NDx2DRfON6QvYCxaoPYFsLI
+MHuRzc2FlYI4ZDYlq+OA341rfgP2UqAUgC/MXJ2dXPHm/Egkg170X0Pp2Sm8IJuK
+SqM9oOI+rUDtqh8iVDouvQGIkSaiQ0hMrt8btQdjMPruSwUf5t20UgsYPP9IH4Qe
+reGNGFDvjvAOqFA44t2DNQS6Bec0Tldi6s7j+gIcItXGxNbP30NrBnR+7ZmkgaQ1
+VJnjh2HdyvRbiOuIicK4WCl7co3OX85hNirckAG/2B4OOY5e9+1BkOF4BA8f2dTO
+mhb/pTqRoMhbDvqpbIqU5OgbxZmi5tpvElRVPshSKLVqNe51R6LTAgMBAAGjIDAe
+MA8GA1UdEwEB/wQFMAMBAf8wCwYDVR0PBAQDAgEGMA0GCSqGSIb3DQEBBQUAA4IB
+AQDI4fg+F5xPIaXUkCfkfEhjJmxnhAf52PCqHw9NuzdMYpE0P+qO5RvfMvsS1RBM
+Mv3v4ASQx4NeJUQia+3cCc9E69kSwVhJfY9UOAtOIFQ4W1eUBJ+WIEzbChWtL8AD
+i5lhsE73gmapGuxVqye+4e/HNLdTv3MzhmqS69DkbdySzRnoPMCrspxX4EU8nsFD
+/HnhdgNu8J5b5HV9JckM2OC3BMTPp3BhKBAlADHLSgmttxZhMoK7nW+gus1px3B2
+yLmorf2GUOC3kQrrrLeNBEoZgSPmkVjeL6Z+/qfctvd1LzAla4VZpXH3uQw7a2EH
+M18k9fczppiB4O1/ShgIiHVp
+-----END CERTIFICATE-----
+</textarea><br/>
         <label>
           public key 1
           <input id="publicKey1" ref={(input) => this.inputPublicKey1 = input} type="file" onChange={this.handlePublicKey.bind(this)}></input>
@@ -797,11 +916,22 @@ class BoxTest extends React.Component {
         </label>
         <br></br>
         <br></br>
+        <label>
+          issuer cert
+          <input type="file" accept=".cer" onChange={ event => { this.handleLoadFile(event, 'certificateIssuer') }}></input>
+        </label>
         <br></br>
+        <br></br> 
         <label>
           cert
-          <input type="file" accept=".cer" onChange={ event => { this.handleLoadFile(event, this.parseFielCertificate) }}></input>
+          <input type="file" accept=".cer" onChange={ event => { this.handleLoadFile(event, 'certificate') }}></input>
         </label>
+        <br></br>
+        <br></br>
+        <br></br>
+        <button onClick={this.validateCertificate.bind(this)}>Validate certificate</button>        
+        <br></br>
+        <button onClick={this.validateCertificateCAPEM.bind(this)}>Validate certificate CA PEM</button>        
         <br></br>
         <br></br>
         <label>
