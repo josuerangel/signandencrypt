@@ -1,4 +1,5 @@
 var path = require('path');
+var Visualizer = require('webpack-visualizer-plugin');
 
 module.exports = {
   entry: {
@@ -47,5 +48,8 @@ module.exports = {
       pvutils: '../../../node_modules/pvutils/build/utils.js',
       pkijs: '../../../node_modules/pkijs/build/index.js'
     }
-  }
+  },
+  plugins: [
+    new Visualizer()
+  ]
 };

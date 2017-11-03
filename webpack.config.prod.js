@@ -1,13 +1,13 @@
 const path = require('path');
 var webpack = require('webpack');
 var CompressionPlugin = require('compression-webpack-plugin');
-
+var Visualizer = require('webpack-visualizer-plugin');
 
 module.exports = {
   entry: {
-    "app.min": [__dirname + '/src'],
+    // "app.min": [__dirname + '/src'],
     "boxencrypt-standalone.min": [__dirname + '/src/components/wrapper/standalone-box-encrypt.js'],
-    "boxdecrypt-standalone.min": [__dirname + '/src/components/wrapper/standalone-box-decrypt.js'],
+    // "boxdecrypt-standalone.min": [__dirname + '/src/components/wrapper/standalone-box-decrypt.js'],
   },
   output: {
     path: path.resolve(__dirname, 'bundles'),
@@ -74,7 +74,8 @@ module.exports = {
       }
    }),
    // new webpack.optimize.DedupePlugin(),
-   new webpack.optimize.AggressiveMergingPlugin()
+   new webpack.optimize.AggressiveMergingPlugin(),
+   new Visualizer(),
   ],
   resolve: {
     alias: {

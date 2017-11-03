@@ -15,8 +15,8 @@ import pdfMake from "pdfmake/build/pdfmake";
 import pdfFonts from "pdfmake/build/vfs_fonts";
 pdfMake.vfs = pdfFonts.pdfMake.vfs;
 
-import '../css/styles.min.css';
-import { Row, Col, FormRow, FormField, FormInput, FileUpload, Button, Spinner} from 'elemental';
+// import '../css/styles.min.css';
+// import { Row, Col, FormRow, FormField, FormInput, FileUpload, Button, Spinner} from 'elemental';
 
 class BoxTest extends React.Component {
   constructor(props) {

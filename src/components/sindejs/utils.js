@@ -213,4 +213,51 @@ export default class Utils {
     const blob = new Blob(byteArrays, {type: contentType});
     return blob;
   };
+
+  static getMessages(language){
+    const _sp = {
+      fileToEncrypt: {
+        label: 'Archivo a encriptar',
+        help: 'Recuerde que las extensiones deben ser validas, ejemplo: PDF, DOCX, XLSX, etc...',
+        validateExtensions: 'Tipo de extensión inválida, extensiones no permitidas: ',
+        validateMaxSize: 'El archivo NombreDelArchivo.extensión supera el tamaño límite de ',
+        readRunning: 'Leyendo y convirtiendo archivo ... ',
+        valid: 'Archivo valido para encriptación.',
+        error: 'Ocurrió un error al leer el archivo a encriptar :: ',
+      },
+      cert: {
+        label: 'Certificado FIEL',
+        help: 'Archivo con extensión .cert',
+        readRunning: 'Leyendo y convirtiendo archivo ... ',
+        valid: 'Certificado valido.',
+        error: 'Ocurrió un error al leer el certificado.',
+      },
+      buttonEncrypt: {
+        label: 'Encriptar',
+      },
+      process: {
+        label: 'Proceso:',
+        encryption: 'encriptación',
+        sign: 'firmado',
+        runing: 'ejecutando proceso ... ',
+        success: 'Se ejecuto correctamente el proceso.',
+        error: 'Se encontro un error durante el proceso.'
+      }
+    };
+
+    const _en = {
+      fileToEncrypt: {
+        label: 'File to encryption',
+        help: 'Remember that the extensions must be valid, example: PDF, DOCX, XLSX, etc ...',
+        validateExtensions: 'Invalid extension type, extensions not allowed: ',
+        valid: 'Valid file for encryption.',
+        error: 'An error occurred while reading the file to be encrypted :: ',
+      },
+      buttonEncrypt: {
+        label: 'Encrypt',
+      }
+    };
+
+    return (language == 'sp') ? _sp : _en;
+  }
 }

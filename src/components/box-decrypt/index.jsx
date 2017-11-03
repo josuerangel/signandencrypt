@@ -1,4 +1,5 @@
 import React from 'react';
+import PropTypes from 'prop-types';
 import mime from 'mime-types';
 import Utils from '../sindejs/utils.js';
 import sindejs from '../sindejs/sindejs.js';
@@ -7,9 +8,8 @@ import pdfMake from "pdfmake/build/pdfmake";
 import pdfFonts from "pdfmake/build/vfs_fonts";
 pdfMake.vfs = pdfFonts.pdfMake.vfs;
 
-import '../css/styles.min.css';
-import { Row, Col, FormRow, FormField, FormInput, FileUpload, Button, Spinner } from 'elemental';
-import PropTypes from 'prop-types';
+// import '../css/styles.min.css';
+// import { Row, Col, FormRow, FormField, FormInput, FileUpload, Button, Spinner } from 'elemental';
 
 /**
  * Props:
