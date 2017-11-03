@@ -30,6 +30,7 @@ class BoxEncrypt extends React.Component {
     this.dataFileForEncrypt = {};
     this.publicKeys = {};
     this.privateKeys = {};
+    this.CA = [];
     this.FIEL = {};
     this.lng = Utils.getMessages(this.props.language);
 
@@ -65,6 +66,25 @@ class BoxEncrypt extends React.Component {
       (key) => { this.publicKeys.key2 = key; console.log('_loadKey2'); console.log(this.publicKeys.key2); }, 
       (error) => { console.log(error) }
     );
+
+    // load CA certificates
+    if (this.props.fiel) this.loadCertificatesCA();
+  }
+
+  loadCertificatesCA(){
+    this.FIEL.CA = [];
+    for(let x = 0; x < this.props.CA.length; x++){
+      this.FIEL.CA[x] = {};
+      const _loadCA = UtilsFIEL.readCertificateFromURL(this.props.CA[x]);
+      _loadCA.then(
+        (cert) => {
+          this.FIEL.CA[x].cert = cert;
+        },
+        (error) => {
+          console.log(error);
+        }
+      );
+    }    
   }
  
   handlePassPhrase(event) {
@@ -200,7 +220,7 @@ class BoxEncrypt extends React.Component {
         this.setState({
           selectedFile: false,
           selectedFileValidation: 'error',
-          selectedFileMessage: this.lng.fileToEncrypt.error + error,
+          selectedFileMessage: this.lng.fileToEncrypt.error + '\n\n' + error,
           selectedFileRunning: false,
         });
         console.log('error in loading file for encrypt: ', error);
@@ -218,26 +238,57 @@ class BoxEncrypt extends React.Component {
     });
 
     setTimeout(() => {
-      const readFile = UtilsFIEL.readCertificateToPEM(file);
-      readFile.then((data) => {
-        this.FIEL.certificatePem = data;
-        console.log('loaded certificate: ');
-        console.log(this.FIEL.certificatePem);
-        this.setState({ 
-          selectedCert: true,
-          selectedCertRunning: false,
-          selectedCertMessage: this.lng.cert.valid,
-          selectedCertValidation: 'success',
-        });
-      }, (err) => {
-        console.log('error in loading certificate: ', err);
-        this.setState({ 
-          selectedCert: false,
-          selectedCertRunning: false,
-          selectedCertMessage: this.lng.cert.error,
-          selectedCertValidation: 'error',
-        });
-      });
+      const _cert = sindejs.readAndValidateCertificate(file, this.FIEL.CA);
+      _cert.then(
+        (cert) => { 
+          this.FIEL.certificatePem = cert;
+          this.setState({ 
+            selectedCert: true,
+            selectedCertRunning: false,
+            selectedCertMessage: this.lng.cert.valid,
+            selectedCertValidation: 'success',
+          });
+        },
+        (error) => { 
+          console.log('error in loading certificate: ', error);
+          this.setState({ 
+            selectedCert: false,
+            selectedCertRunning: false,
+            selectedCertMessage: this.lng.cert.error + '\n\n' + error.message,
+            selectedCertValidation: 'error',
+          });
+        }
+      );
+      // const readFile = UtilsFIEL.readCertificateToPEM(file);
+      // readFile.then((data) => {
+      //   this.FIEL.certificatePem = data;
+      //   console.log('loaded certificate: ');
+      //   console.log(this.FIEL.certificatePem);
+
+      //   const validateCert = UtilsFIEL.validateCertificate(this.FIEL.certificatePem, this.FIEL.CA);
+      //   validateCert.then(
+      //     (message) => {
+      //       this.setState({ 
+      //         selectedCert: true,
+      //         selectedCertRunning: false,
+      //         selectedCertMessage: this.lng.cert.valid,
+      //         selectedCertValidation: 'success',
+      //       });
+      //     },
+      //     (error) => {
+      //       console.log();
+      //     }
+      //   );
+
+      // }, (err) => {
+      //   console.log('error in loading certificate: ', err);
+      //   this.setState({ 
+      //     selectedCert: false,
+      //     selectedCertRunning: false,
+      //     selectedCertMessage: this.lng.cert.error,
+      //     selectedCertValidation: 'error',
+      //   });
+      // });
     }, 1500);
   }
 
@@ -388,7 +439,7 @@ BoxEncrypt.defaultProps = {
 BoxEncrypt.propTypes = {
   publicKey1: PropTypes.string.isRequired,
   publicKey2: PropTypes.string.isRequired,
-  fiel: PropTypes.boolean,
+  fiel: PropTypes.bool,
   CA: PropTypes.array,
   OSCP: PropTypes.array,
   language: PropTypes.string,

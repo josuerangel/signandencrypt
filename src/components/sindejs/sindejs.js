@@ -1,6 +1,7 @@
 import * as jsrsasign from 'jsrsasign';
 import * as openpgp from 'openpgp';
 import Utils from './utils.js';
+import UtilsFIEL from './utils_fiel.js'
 import moment from 'moment';
 import * as asn1js from "asn1js";
 import { RSAPublicKey, ContentInfo, EncapsulatedContentInfo, SignedData } from 'pkijs';
@@ -397,8 +398,10 @@ export default class sindejs {
   static loadPublicKey(url) {
     return new Promise((resolve, reject) => {
       fetch(url, this.fetchInit).then((response) => {
+        // console.log(response);
         return response.arrayBuffer();
       }).then((arraybuffer) => {
+        console.log('loadPublicKey arraybuffer loaded: ', arraybuffer);
         const keyPEM = Utils._arrayBufferToPublicKeyPEM(arraybuffer);
         const keyHeader = openpgp.key.readArmored(keyPEM);
         const key = openpgp.key.readArmored(keyPEM).keys[0];
@@ -557,6 +560,38 @@ export default class sindejs {
       },
       content: _content,
     }
+  }
+
+  /**
+   * Read  and validate certification
+   * @param  {[type]} file [description]
+   * @param  {[type]} CA   [description]
+   * @return {[type]}      [description]
+   */
+  static readAndValidateCertificate(file, CA){
+    return new Promise((resolve, reject) => {
+      console.log('readAndValidateCertificate');
+      const readCert = UtilsFIEL.readCertificateToPEM(file);
+      readCert.then((data) => {
+        console.log('loaded certificate: ');
+        console.log(data);
+        const validateCert = UtilsFIEL.validateCertificate(data, CA);
+        validateCert.then(
+          (message) => {
+            console.log(message);
+            resolve(data);
+          },
+          (error) => {
+            console.log('Error readAndValidateCertificate\n' + error.message);
+            reject(Error('Error readAndValidateCertificate\n' + error.message));
+          }
+        );
+
+      }, (error) => {
+        console.log('Error readAndValidateCertificate\n' + error.message);
+        reject(Error('Error readAndValidateCertificate\n' + error.message));
+      });
+    });
   }
 };
 
