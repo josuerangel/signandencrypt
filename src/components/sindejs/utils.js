@@ -1,6 +1,18 @@
 import * as jsrsasign from 'jsrsasign';
 import * as openpgp from 'openpgp';
 import mime from 'mime-types';
+
+export function fetchCheckText(response) {
+    if (response.status >= 200 && response.status < 300) {
+      console.log('checkStatusFetch ');
+      return response.text();
+    } else {
+      var error = new Error(response.statusText);
+      error.response = response;
+      throw error;
+    }
+  };
+
 export default class Utils {
   constructor(parameters = {}){
     /**
@@ -228,7 +240,7 @@ export default class Utils {
       cert: {
         label: 'Certificado FIEL',
         help: 'Archivo con extensión .cert',
-        readRunning: 'Leyendo y convirtiendo archivo ... ',
+        readRunning: 'Leyendo, convirtiendo y validando certificado ... ',
         valid: 'Certificado valido.',
         error: 'Ocurrió un error al leer el certificado.',
       },
@@ -259,5 +271,8 @@ export default class Utils {
     };
 
     return (language == 'sp') ? _sp : _en;
-  }
+  };
+
+
+
 }

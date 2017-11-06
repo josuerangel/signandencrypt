@@ -563,7 +563,7 @@ export default class sindejs {
   }
 
   /**
-   * Read  and validate certification
+   * Read  and validate OSCP certification
    * @param  {[type]} file [description]
    * @param  {[type]} CA   [description]
    * @return {[type]}      [description]
@@ -575,10 +575,11 @@ export default class sindejs {
       readCert.then((data) => {
         console.log('loaded certificate: ');
         console.log(data);
-        const validateCert = UtilsFIEL.validateCertificate(data, CA);
+
+        const validateCert = UtilsFIEL.validateCertificateOSCP(data, CA);
         validateCert.then(
-          (message) => {
-            console.log(message);
+          (valid) => {
+            console.log('readAndValidateCertificate valid: ', valid);
             resolve(data);
           },
           (error) => {

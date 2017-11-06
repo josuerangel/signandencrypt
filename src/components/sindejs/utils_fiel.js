@@ -1,4 +1,5 @@
 import * as jsrsasign from 'jsrsasign';
+import {fetchCheckText} from './utils.js';
 
 export default class UtilsFIEL {
   constructor(parameters = {}){
@@ -48,7 +49,13 @@ export default class UtilsFIEL {
       }).then((arraybuffer) => {
         console.log('readCertificateFromURL arraybuffer: ', arraybuffer);
         const certHex = jsrsasign.ArrayBuffertohex(arraybuffer);
-        const certPem = jsrsasign.KJUR.asn1.ASN1Util.getPEMStringFromHex(certHex, "CERTIFICATE");
+        
+        let  certPem = jsrsasign.hextorstr(certHex);
+        console.log('readCertificateFromURL _certStr: ', certPem);
+        
+        if (!certPem.startsWith('-----BEGIN CERTIFICATE-----'))
+          certPem = jsrsasign.KJUR.asn1.ASN1Util.getPEMStringFromHex(certHex, "CERTIFICATE");
+
         console.log('readCertificateFromURL loaded cert url: : ', url);
         resolve(certPem);
       }).catch((error) => {
@@ -57,37 +64,70 @@ export default class UtilsFIEL {
     });    
   }
 
-  static validateCertificate(cert, certCA){
+  static validateCertificateOSCP(cert, certCA, url = "../../filter/SvtFIEL?option=validateCert"){
     return new Promise((resolve, reject) => {
       console.log('validateCertificateOSCP');
-      resolve('ok');
-//     // generate OCSP request using sha1 algorithnm by default.
-//     let hReq = this.jsrsasign.KJUR.asn1.ocsp.OCSPUtil.getRequestHex(this.certCA, this.FIEL.certificatePem);
-//     console.log('hReq: ', hReq);
+      let haveValid = false;
+      let arrResult = [];
+      for (var i = 0; i < certCA.length; i++) 
+        arrResult[i] = UtilsFIEL._validateCertificate(cert, certCA[i].cert, url);
+      
+      console.log('validateCertificate arrResult: ', arrResult);
+      Promise.all(arrResult).then(values => {
+        console.log('Promise all: ', values);
+        for (var i = 0; i < values.length; i++) {
+          console.log('value in certificate validation: ', values[i].validCertificate);
+          if (values[i].validCertificate) {
+            console.log('Valid certifica resolve true');
+            //resolve(true);
+            haveValid = true;
+          }
+        }
+        console.log('after resolve in for');
 
-//     let _abReq = this.jsrsasign.hextoArrayBuffer(hReq);
-//     let _blob = new Blob([_abReq], {type: "octet/stream"});
+        if (haveValid) resolve(true);
+        else reject(Error('Not valid OSCP'));
+      }).catch(reason => {
+        console.log('catch reason: ', reason);
+        reject(Error(reason));
+      });
+    });
+  }
 
-//     let _headers = new Headers();
-//     _headers.append("Content-Type", "application/ocsp-request");
-//     _headers.append("Accept","application/ocsp-response");
+  static _validateCertificate(cert, certCA, url) {
+    return new Promise((resolve, reject) => {
+      try{
+        console.log('_validateCertificate');
+        // console.log('_validateCertificate cert: ', cert);
+        // console.log('_validateCertificate certCA', certCA);
+        let hReq = jsrsasign.KJUR.asn1.ocsp.OCSPUtil.getRequestHex(certCA, cert);
+        console.log('hReq: ', hReq);  
+        const _url = url + '&hexOSCP=' + hReq;
+        fetch(_url, {
+          method: 'GET',
+          credentials: 'same-origin',
+        }).then(fetchCheckText).then((response) => {
+          console.log('_validateCertificate response: ', response);
+          //const _res = response.json();
+          //console.log('_validateCertificate response json: ', _res);
+          const responseJSON = JSON.parse(response);
+          if (responseJSON.ResponseData != undefined)
+            resolve(responseJSON.ResponseData[0]);
+          else{
+            if (responseJSON.ResponseError[0].ErrorType == "LoginError")
+              reject("Session error");
+            else
+              reject(responseJSON.ResponseError[0].ErrorMessage);
+          }
 
-//     let _data = new FormData();
-//     _data.append("hexOSCP", hReq);
-
-//     let _options = {
-//       method: 'GET',
-// //      headers: _headers,
-//       mode: 'cors',
-//       //body: _data
-//     };
-
-//     const _url = "../../SvtValidateCertificate?hexOSCP=" + hReq;
-//     let _request = new Request(_url, _options);
-
-//     fetch(_url, _options).then(this.checkStatus).then((response) => {
-//       console.log(response);
-//     });
+        })
+        .catch((error)=>{
+          reject(Error('Error _validateCertificate :: ' + error.message));
+        });
+      }
+      catch(error){
+        reject(Error('Error _validateCertificate :: ' + error));
+      }
     });
   }
 
