@@ -15,12 +15,6 @@ import HelpBlock from 'react-bootstrap/lib/HelpBlock';
 import Button from 'react-bootstrap/lib/Button';
 import Alert from 'react-bootstrap/lib/Alert';
 import Collapse from 'react-bootstrap/lib/Collapse';
-import Well from 'react-bootstrap/lib/Well';
-import ListGroup from 'react-bootstrap/lib/ListGroup';
-import ListGroupItem from 'react-bootstrap/lib/ListGroupItem';
-
-import Loader from 'halogen/RingLoader';
-import '../css/spinner.styl';
 
 import InputFile from '../input-file/index.jsx';
 
@@ -41,23 +35,13 @@ class BoxEncrypt extends React.Component {
     this.state = {
       passPhrase: '',
       selectedFile: false,
-      selectedFileValidation: null,
-      selectedFileMessage: this.lng.fileToEncrypt.help,
-      selectedFileRunning: false,
       selectedCert: false,
-      selectedCertValidation: null,
-      selectedCertMessage: this.lng.cert.help,
-      selectedCertRunning: false,
       selectedKey: false,
-      selectedKeyValidation: null,
-      selectedKeyMessage: this.lng.key.help,
-      selectedKeyRunning: false,
       nameFileToDecrypt: '',
       showProcessMessages: false,
       processRuning: false,
       processState: 'info',
       processMessages: [],
-      test: [],
       signedProcess: null,
       encryptionProcess: null,
     }
@@ -189,38 +173,6 @@ class BoxEncrypt extends React.Component {
     });
   }
 
-  validateFileForEncrypt(){
-    console.log('validateFileForEncrypt this.dataFileForEncrypt: ', this.dataFileForEncrypt);
-    let _messageValidate = '';
-
-    // validate extensions
-    const _badExtension = this.props.blockedExtensions.includes(this.dataFileForEncrypt.encryptExtension);
-    if (_badExtension) 
-      _messageValidate = this.lng.fileToEncrypt.validateExtensions + this.props.blockedExtensions.join(',');
-
-    // validate max size
-    if (this.props.maxSize != 0) {
-      const _maxSize = this.props.maxSize * 1024 * 1024;
-      if (this.dataFileForEncrypt.sizeOriginalFile > _maxSize) {
-        _messageValidate = (this.props.language == 'sp')
-            ? 'El archivo ' + this.dataFileForEncrypt.originalName + ' supera el tamaño límite de ' + this.props.maxSize + ' MB'
-            : 'The file ' + this.dataFileForEncrypt.originalName + ' exceeds the limit size of ' + this.props.maxSize + ' MB';
-        return;
-      }
-    }
-
-    if (_messageValidate.length > 0) {
-      this.setState({
-        selectedFile: false,
-        selectedFileValidation: 'error',
-        selectedFileMessage: _messageValidate,
-        selectedFileRunning: false,
-      });
-      return false;
-    }
-    else return true;
-  }
-
   getMessageValidations(){
     let _messageValidate = '';
 
@@ -242,7 +194,7 @@ class BoxEncrypt extends React.Component {
     return _messageValidate;
   }
 
-  loadFileForEncryptPromise(file){
+  loadFileForEncrypt(file){
     return new Promise((resolve, reject) => {
       Object.assign(this.dataFileForEncrypt, Utils.getOriginalDataFromName(file.name), { sizeOriginalFile: file.size });
       const _msgValidations = this.getMessageValidations();
@@ -263,143 +215,61 @@ class BoxEncrypt extends React.Component {
     });
   }
 
-  loadFileForEncrypt(file){
-    console.log('loadFileForEncrypt');
-    this.setState({ 
-      showProcessMessages: false,
-      selectedFileRunning: true,
-      selectedFileMessage: this.lng.fileToEncrypt.readRunning,
-      selectedFileValidation: null,
-    });
-
-    Object.assign(this.dataFileForEncrypt, Utils.getOriginalDataFromName(file.name));
-    this.dataFileForEncrypt.sizeOriginalFile = file.size;
-
-    if (!this.validateFileForEncrypt()) return;
-
-    // necesary setTimeout for don't block UI whith long files seleted
-    setTimeout(() => {
-      console.log('loadFileForEncrypt read process');
-      // read file for convert to B64 
-      const readFile = Utils.readFileToB64(file);
-      readFile.then((data) => {      
-        this.messageForEncryptB64 = data;
-        console.log('loaded file for encrypt to B64: ', this.messageForEncryptB64);
-
-        this.dataFileForEncrypt.md5 = Utils.getMD5(this.messageForEncryptB64);
-        console.log('this.dataFileForEncrypt: ',this.dataFileForEncrypt);
-
-        this.setState({
-          selectedFile: true,
-          selectedFileValidation: 'success',
-          selectedFileMessage: this.lng.fileToEncrypt.valid,
-          selectedFileRunning: false,
-        });
-      }, (error) => {
-        this.setState({
-          selectedFile: false,
-          selectedFileValidation: 'error',
-          selectedFileMessage: this.lng.fileToEncrypt.error + '\n\n' + error,
-          selectedFileRunning: false,
-        });
-        console.log('error in loading file for encrypt: ', error);
-      });
-    }, 1500);
-  }
-
   loadCertificate(file){
-    console.log('loadCertificate');
-    this.setState({ 
-      showProcessMessages: false,
-      selectedCertRunning: true,
-      selectedCertMessage: this.lng.cert.readRunning,
-      selectedCertValidation: null,
-    });
+    return new Promise((resolve, reject) => {
+      console.log('loadCertificate');
 
-    setTimeout(() => {
       const _cert = sindejs.readAndValidateCertificate(file, this.FIEL.CA);
       _cert.then(
         (cert) => { 
           this.FIEL.certificatePem = cert;
-          this.setState({ 
-            selectedCert: true,
-            selectedCertRunning: false,
-            selectedCertMessage: this.lng.cert.valid,
-            selectedCertValidation: 'success',
-          });
+          resolve();
         },
         (error) => { 
           console.log('error in loading certificate: ', error);
-          this.setState({ 
-            selectedCert: false,
-            selectedCertRunning: false,
-            selectedCertMessage: this.lng.cert.error + '\n\n' + error.message,
-            selectedCertValidation: 'error',
-          });
+          reject({ message: error.message });
         }
       );
-    }, 1500);
-  }
-
-  loadKeyFIEL(file){
-    this.setState({ 
-      showProcessMessages: false,
-      selectedKeyRunning: true,
-      selectedKeyMessage: this.lng.key.readRunning,
-      selectedKeyValidation: null,
-    }, () => {
-      setTimeout(() => {
-        const readFile = UtilsFIEL.readKeyFIELToPEM(file, this.state.passPhrase);
-        readFile.then((data) => {
-          this.FIEL.keyPEM = data;
-          console.log('loaded key fiel: ');
-          console.log(this.FIEL.keyPEM);
-          this.setState({
-            selectedKey: true,
-            selectedKeyRunning: false,
-            selectedKeyMessage: this.lng.key.valid,
-            selectedKeyValidation: 'success',
-          });      
-        }, (error) => {
-          console.log('error in loading key fiel: ', error);      
-          this.setState({
-            selectedKey: false,
-            selectedKeyRunning: false,
-            selectedKeyMessage: this.lng.key.error + '      --     ' + error.message,
-            selectedKeyValidation: 'error',
-          });
-          this.inputKey.value = "";
-        });
-
-      }, 1500);
     });
   }
 
-  handleLoadFile(event, type){
-    console.log('handleLoadFile');
-    event.preventDefault();
-    let file = event.target.files[0];
-    console.log('handleLoadFile set file to var');
-    switch (type) {
-      case 'fileForEncrypt':
-        this.loadFileForEncrypt(file);
-        break;
-      case 'certificate':
-        this.loadCertificate(file);
-        break;
-      case 'keyFIEL':
-        this.loadKeyFIEL(file);
-        break;
-      default:
-        console.log('Do not exist that type for load file');
-    }
+  loadKeyFIEL(file){
+    return new Promise((resolve, reject) => {
+      const readFile = UtilsFIEL.readKeyFIELToPEM(file, this.state.passPhrase);
+      readFile.then((data) => {
+        this.FIEL.keyPEM = data;
+        console.log('loaded key fiel: ');
+        console.log(this.FIEL.keyPEM);
+        resolve();
+      }, (error) => {
+        console.log('error in loading key fiel: ', error);  
+        reject({ message: error.message });
+      });
+    });
   }
 
   render() {
-    const _spinnerBlockHelp = 
-      <div className="spinnerContainer">
-        <Loader color="#48A0DC" size="32px" margin="4px"/>
-      </div>;
+    const _cert = (this.props.fiel)
+      ? <InputFile lng={this.lng.cert} process={this.loadCertificate.bind(this)} valid={ (state) => { this.setState({ selectedCert : state }) }} />
+      : null;
+
+    const _fielPassPhrase = (this.props.fiel)
+      ? <FormGroup validationState={(this.state.passPhrase.length) ? 'success' : null } >
+          <ControlLabel>{this.lng.passPhrase.label}</ControlLabel>
+            <FormControl
+              type="text"
+              value={this.state.passPhrase}
+              placeholder={this.state.passPhrase.placeholder}
+              onChange={this.handlePassPhrase.bind(this)}
+            />
+            <FormControl.Feedback />
+          <HelpBlock>{this.lng.passPhrase.help}</HelpBlock>          
+        </FormGroup>
+      : null;
+
+    const _key = (this.props.fiel)
+      ? <InputFile lng={this.lng.key} enabled={(this.state.passPhrase.length > 0) ? true : false } process={this.loadKeyFIEL.bind(this)} valid={ (state) => { this.setState({ selectedKey : state }) }} />
+      : null;
 
     const _buttonEncrypt = (this.state.selectedFile && !this.state.processRuning) 
       ? <Button bsStyle="primary" onClick={ event => { this.handleProcess(event, 'encrypt') } }>{this.lng.buttonEncrypt.label}</Button>
@@ -412,96 +282,16 @@ class BoxEncrypt extends React.Component {
     
     const _button = (this.props.fiel) ? _buttonSingEncrypt : _buttonEncrypt;
 
-    const _fielCertificate = (this.props.fiel) 
-      ? <FormGroup controlId="formCert" validationState={this.state.selectedCertValidation} >
-          <ControlLabel>{this.lng.cert.label}</ControlLabel>
-          <FormControl type="file" accept=".cer" onChange={ event => { this.handleLoadFile(event, 'certificate') } } />
-          <FormControl.Feedback />
-          <HelpBlock className="HelpBlockSpinner">
-            <div className={(this.state.selectedCertRunning) ? "helpMessageSpinner" : "helpMessage"}>
-              {this.state.selectedCertMessage}
-            </div>
-            {(this.state.selectedCertRunning) ? _spinnerBlockHelp : null}
-          </HelpBlock>
-        </FormGroup>
-      : null;
-
-    const _fielPassPhrase = (this.props.fiel)
-      ? <FormGroup
-          validationState={(this.state.passPhrase.length) ? 'success' : null }
-        >
-          <ControlLabel>{this.lng.passPhrase.label}</ControlLabel>
-          <FormControl
-            type="text"
-            value={this.state.passPhrase}
-            placeholder={this.state.passPhrase.placeholder}
-            onChange={this.handlePassPhrase.bind(this)}
-          />
-          <FormControl.Feedback />
-          <HelpBlock>{this.lng.passPhrase.help}</HelpBlock>          
-        </FormGroup>
-      : null;
-
-    let _fielKey = null;
-    if (this.props.fiel){
-      _fielKey = (this.state.passPhrase.length > 0)
-        ?
-          <FormGroup controlId="formKey" validationState={ this.state.selectedKeyValidation }>
-            <ControlLabel>{this.lng.key.label}</ControlLabel>
-            <FormControl type="file" accept=".key" onChange={ event => { this.handleLoadFile(event, 'keyFIEL') }}
-              ref={(input) => this.inputKey = input } />
-            <FormControl.Feedback />
-            <HelpBlock className="HelpBlockSpinner">
-              <div className={(this.state.selectedKeyRunning) ? "helpMessageSpinner" : "helpMessage"}>
-                {this.state.selectedKeyMessage}
-              </div>
-              {(this.state.selectedKeyRunning) ? _spinnerBlockHelp : null}
-            </HelpBlock>
-          </FormGroup>
-        :
-          <FormGroup controlId="formKey" validationState={ this.state.selectedKeyValidation }>
-            <ControlLabel>{this.lng.key.label}</ControlLabel>
-            <FormControl disabled type="file" accept=".key" onChange={ event => { this.handleLoadFile(event, 'keyFIEL') }} />
-            <FormControl.Feedback />
-            <HelpBlock className="HelpBlockSpinner">
-              <div className={(this.state.selectedKeyRunning) ? "helpMessageSpinner" : "helpMessage"}>
-                {this.state.selectedKeyMessage}
-              </div>
-              {(this.state.selectedKeyRunning) ? _spinnerBlockHelp : null}
-            </HelpBlock>
-          </FormGroup>
-
-    }
-
     const _processMessages = this.state.processMessages.map((message, index) => { 
       return <li key={"pmKey" + index }>{message}</li>;
     });
 
-    const _alert = (this.state.processRuning) 
-      ? <Alert bsStyle={this.state.processState}>
-          <ul>{_processMessages}</ul>
-        </Alert>
-      : <Alert bsStyle={this.state.processState}>
-          <ul>{_processMessages}</ul>
-        </Alert>;
-
     return (
       <form>
-        <InputFile lng={this.lng.inputFile} valid={ (state) => { this.setState({ selectedFile : state }) }} process={this.loadFileForEncryptPromise.bind(this)} />
-        <FormGroup controlId="formFileEncrypt" validationState={this.state.selectedFileValidation}>
-          <ControlLabel>{this.lng.fileToEncrypt.label}</ControlLabel>
-          <FormControl type="file" onChange={ event => { this.handleLoadFile(event, 'fileForEncrypt') } } />
-          <FormControl.Feedback />
-          <HelpBlock className="HelpBlockSpinner">
-            <div className={(this.state.selectedFileRunning) ? "helpMessageSpinner" : "helpMessage"}>
-              {this.state.selectedFileMessage}
-            </div>
-            {(this.state.selectedFileRunning) ? _spinnerBlockHelp : null}
-          </HelpBlock>
-        </FormGroup>
-        {_fielCertificate}
+        <InputFile lng={this.lng.inputFile} process={this.loadFileForEncrypt.bind(this)} valid={ (state) => { this.setState({ selectedFile : state }) }} />
+        {_cert}
         {_fielPassPhrase}
-        {_fielKey}
+        {_key}
         {_button}
         <br />
         <br />

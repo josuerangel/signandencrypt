@@ -56,23 +56,25 @@ class InputFile extends React.Component {
       help: this.props.lng.running,
       validation: null,
 		}, () => {
-			if (typeof this.props.process == 'function') {
-				const _promise = this.props.process(file);
-				console.log('InputFile callProcess process promise: ', _promise);
+			setTimeout(() => {
+				if (typeof this.props.process == 'function') {
+					const _promise = this.props.process(file);
+					console.log('InputFile callProcess process promise: ', _promise);
 
-				if (_promise == undefined) {
-					this.rejectEvent({ message: 'InputFile need a Promise for process function.' });
-					return;
-				}
+					if (_promise == undefined) {
+						this.rejectEvent({ message: 'InputFile need a Promise for process function.' });
+						return;
+					}
 
-				const isPromise = typeof _promise.then == 'function';
-				if (!isPromise) {
-					this.rejectEvent({ message: 'InputFile need a Promise for process function.' });
-					return;
-				}
-				
-				_promise.then(this.resolveEvent.bind(this), this.rejectEvent.bind(this));
-			}				
+					const isPromise = typeof _promise.then == 'function';
+					if (!isPromise) {
+						this.rejectEvent({ message: 'InputFile need a Promise for process function.' });
+						return;
+					}
+					
+					_promise.then(this.resolveEvent.bind(this), this.rejectEvent.bind(this));
+				}				
+			}, 1500);
 		});
 	}
 
@@ -81,11 +83,15 @@ class InputFile extends React.Component {
       <div className="spinnerContainer">
         <Loader color="#48A0DC" size="32px" margin="4px"/>
       </div>;
+
+    const _control = (this.props.enabled)
+    	? <FormControl type="file" onChange={ this.handleLoadFile.bind(this) } />
+    	: <FormControl disabled type="file" onChange={ this.handleLoadFile.bind(this) } />;
       		
 		return (
       <FormGroup validationState={ this.state.validation }>
         <ControlLabel>{ this.props.lng.label }</ControlLabel>
-        <FormControl type="file" onChange={ this.handleLoadFile.bind(this) } />
+        {_control}
         <FormControl.Feedback />
         <HelpBlock className="HelpBlockSpinner">
           <div className={ (this.state.running) ? "helpMessageSpinner" : "helpMessage" }>

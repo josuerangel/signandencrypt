@@ -247,8 +247,8 @@ export default class Utils {
       cert: {
         label: 'Certificado FIEL',
         help: 'Archivo con extensión .cert',
-        readRunning: 'Leyendo, convirtiendo y validando certificado ... ',
-        valid: 'Certificado valido.',
+        running: 'Leyendo, convirtiendo y validando certificado ... ',
+        success: 'Certificado valido.',
         error: 'Ocurrió un error al leer el certificado.',
       },
       passPhrase: {
@@ -259,8 +259,8 @@ export default class Utils {
       key : {
         label: 'Llave FIEL',
         help: 'Seleccionar el archivo .key proporcionado por SAT',
-        readRunning: 'Leyendo y desencriptando llave FIEL ...',
-        valid: 'Llave desencriptada correctamente.',
+        running: 'Leyendo y desencriptando llave FIEL ...',
+        success: 'Llave desencriptada correctamente.',
         error: 'Ocurrió un error al desencriptar la llave, favor de validar la constraseña de la llave FIEL.',
       },
       buttonEncrypt: {
@@ -278,8 +278,6 @@ export default class Utils {
       },
       process: {
         label: 'Proceso:',
-        // encryption: 'encriptación',
-        // sign: 'firmado',
         running: 'Ejecutando proceso ... ',
         success: 'Se ejecuto correctamente el proceso.',
         error: 'Se encontro un error durante el proceso.'
@@ -288,8 +286,8 @@ export default class Utils {
         label: 'Archivo a desencriptar',
         help: 'Recuerde que las extensiones validas son: .CFE y .CFEI',
         validateExtensions: 'Tipo de extensión inválida, extensiones no permitidas: ',
-        readRunning: 'Leyendo y convirtiendo archivo ... ',
-        valid: 'Archivo valido para desencriptar.',
+        running: 'Leyendo y convirtiendo archivo ... ',
+        success: 'Archivo valido para desencriptar.',
         error: 'Ocurrió un error al leer el archivo para desencriptar :: ',        
       },
       buttonDecrypt: {
@@ -300,13 +298,20 @@ export default class Utils {
         placeholder: 'Ingrese contraseña para la llave privada',
         help: 'Debe capturar la contraseña para habilidar la selección del archivo de la llave privada',
       },
-      keyGPG: {
-        label: 'Llave privada GPG',
+      privateKey1: {
+        label: 'Llave privada GPG 1',
         help: 'Seleccionar el archivo .gpg de su llave privada.',
-        readRunning: 'Leyendo y desencriptando llave GPG ...',
-        valid: 'Llave desencriptada correctamente.',
+        running: 'Leyendo y desencriptando llave GPG ...',
+        success: 'Llave desencriptada correctamente.',
         error: 'Ocurrió un error al desencriptar la llave, favor de validar la constraseña de la llave privada',        
-      }
+      },      
+      privateKey2: {
+        label: 'Llave privada GPG 2',
+        help: 'Seleccionar el archivo .gpg de su llave privada.',
+        running: 'Leyendo y desencriptando llave GPG ...',
+        success: 'Llave desencriptada correctamente.',
+        error: 'Ocurrió un error al desencriptar la llave, favor de validar la constraseña de la llave privada',        
+      },            
     };
 
     const _en = {
