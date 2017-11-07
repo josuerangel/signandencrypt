@@ -99,7 +99,7 @@ class BoxEncrypt extends React.Component {
   handlePassPhrase(event) {
     event.preventDefault();
     console.log(event.target.value);
-    this.setState({passPhrase: event.target.value});
+    this.setState({ passPhrase: event.target.value });
   }
 
   encryption(message, extension, certificate){
@@ -219,6 +219,48 @@ class BoxEncrypt extends React.Component {
       return false;
     }
     else return true;
+  }
+
+  getMessageValidations(){
+    let _messageValidate = '';
+
+    // validate extensions
+    const _badExtension = this.props.blockedExtensions.includes(this.dataFileForEncrypt.encryptExtension);
+    if (_badExtension) 
+      _messageValidate = this.lng.fileToEncrypt.validateExtensions + this.props.blockedExtensions.join(',');
+
+    // validate max size
+    if (this.props.maxSize != 0) {
+      const _maxSize = this.props.maxSize * 1024 * 1024;
+      if (this.dataFileForEncrypt.sizeOriginalFile > _maxSize) {
+        _messageValidate = (this.props.language == 'sp')
+            ? 'El archivo ' + this.dataFileForEncrypt.originalName + ' supera el tamaño límite de ' + this.props.maxSize + ' MB'
+            : 'The file ' + this.dataFileForEncrypt.originalName + ' exceeds the limit size of ' + this.props.maxSize + ' MB';
+      }
+    }
+
+    return _messageValidate;
+  }
+
+  loadFileForEncryptPromise(file){
+    return new Promise((resolve, reject) => {
+      Object.assign(this.dataFileForEncrypt, Utils.getOriginalDataFromName(file.name), { sizeOriginalFile: file.size });
+      const _msgValidations = this.getMessageValidations();
+      if (_msgValidations.length > 0) {
+        reject({ message: _msgValidations });
+        return;
+      }
+
+      // read file for convert to B64 
+      const readFile = Utils.readFileToB64(file);
+      readFile.then((data) => {
+        this.messageForEncryptB64 = data;
+        this.dataFileForEncrypt.md5 = Utils.getMD5(this.messageForEncryptB64);
+        resolve({});
+      }, (error) => {
+        reject({ message: error });
+      });
+    });
   }
 
   loadFileForEncrypt(file){
@@ -445,7 +487,7 @@ class BoxEncrypt extends React.Component {
 
     return (
       <form>
-        <InputFile lng={this.lng.inputFile} />
+        <InputFile lng={this.lng.inputFile} valid={ (state) => { this.setState({ selectedFile : state }) }} process={this.loadFileForEncryptPromise.bind(this)} />
         <FormGroup controlId="formFileEncrypt" validationState={this.state.selectedFileValidation}>
           <ControlLabel>{this.lng.fileToEncrypt.label}</ControlLabel>
           <FormControl type="file" onChange={ event => { this.handleLoadFile(event, 'fileForEncrypt') } } />

@@ -18,20 +18,62 @@ class InputFile extends React.Component {
 		}
 	}
 
+	handleChange(value){
+		if (typeof this.props.valid == 'function'){
+			this.props.valid(value);
+		}
+	}
+
+	resolveEvent(resolve){
+		console.log('InputFile resolveEvent resolve: ', resolve, this);
+		this.setState({
+			validation: 'success',
+			running: false,
+			help: this.props.lng.success,
+		}, this.handleChange(true));
+	}
+
+	rejectEvent(reject){
+		console.log('InputFile rejectEvent reject: ', reject, this);
+
+		const _messageReject = (reject.message == undefined ) ? '' : reject.message;
+		const _message = this.props.lng.error + '   ' + _messageReject
+		this.setState({
+			running: false,
+			help: _message,
+			validation: 'error',
+		}, this.handleChange(false));
+	}
+
+
 	handleLoadFile(event){
 		console.log('InputFile handleLoadFile event', event);		
 		event.preventDefault();
+		const file = event.target.files[0];
 
 		this.setState({
       running: true,
       help: this.props.lng.running,
-      validation: 'warning',
-		});
+      validation: null,
+		}, () => {
+			if (typeof this.props.process == 'function') {
+				const _promise = this.props.process(file);
+				console.log('InputFile callProcess process promise: ', _promise);
 
-		if (typeof this.props.process == 'function') {
-			console.log('InputFile handleLoadFile process');
-			const _promise = this.props.process(event.target.files[0]);
-		}
+				if (_promise == undefined) {
+					this.rejectEvent({ message: 'InputFile need a Promise for process function.' });
+					return;
+				}
+
+				const isPromise = typeof _promise.then == 'function';
+				if (!isPromise) {
+					this.rejectEvent({ message: 'InputFile need a Promise for process function.' });
+					return;
+				}
+				
+				_promise.then(this.resolveEvent.bind(this), this.rejectEvent.bind(this));
+			}				
+		});
 	}
 
 	render(){
@@ -59,12 +101,14 @@ class InputFile extends React.Component {
 InputFile.defaultProps = {
 	enabled: true,
 	process: () => {},
+	valid: () => {},
 };
 
 InputFile.propType = {
 	lng : PropTypes.object.isRequired,
 	enabled: PropTypes.bool,
 	process: PropTypes.func,
+	valid: PropTypes.func,
 };
 
 module.exports = InputFile;
