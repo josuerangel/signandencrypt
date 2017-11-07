@@ -22,6 +22,8 @@ import ListGroupItem from 'react-bootstrap/lib/ListGroupItem';
 import Loader from 'halogen/RingLoader';
 import '../css/spinner.styl';
 
+import InputFile from '../input-file/index.jsx';
+
 class BoxEncrypt extends React.Component {
   constructor(props) {
     super(props);
@@ -34,6 +36,8 @@ class BoxEncrypt extends React.Component {
     this.FIEL = {};
     this.lng = Utils.getMessages(this.props.language);
 
+    this.inputKey;
+
     this.state = {
       passPhrase: '',
       selectedFile: false,
@@ -45,12 +49,17 @@ class BoxEncrypt extends React.Component {
       selectedCertMessage: this.lng.cert.help,
       selectedCertRunning: false,
       selectedKey: false,
-      selectedKeyMessage: 'Seleccionar el archivo .key proporcionado por SAT',
+      selectedKeyValidation: null,
+      selectedKeyMessage: this.lng.key.help,
+      selectedKeyRunning: false,
       nameFileToDecrypt: '',
       showProcessMessages: false,
       processRuning: false,
       processState: 'info',
-      processMessage: this.lng.process.runing,
+      processMessages: [],
+      test: [],
+      signedProcess: null,
+      encryptionProcess: null,
     }
   }
 
@@ -95,6 +104,10 @@ class BoxEncrypt extends React.Component {
 
   encryption(message, extension, certificate){
     console.log('start Encrypt');
+    this.setState({ processMessages: [...this.state.processMessages, this.lng.encrypt.running]}, 
+    () => {
+
+
     const encryptProcess = sindejs.encrypt(message, this.publicKeys);
     encryptProcess.then(
       (messageEncrypted) => {
@@ -113,43 +126,67 @@ class BoxEncrypt extends React.Component {
           size: blobfile.size + 3
         }
         pdfMake.createPdf(sindejs.getPdfDefinition(this.publicKeys, dataFilesPDF, this.props.language)).download(nameFile + '.acuseGeneracion.pdf');
-        FileSaver.saveAs(blobfile, nameFile);        
+        FileSaver.saveAs(blobfile, nameFile);     
         this.setState({ 
           processRuning: false,
           processState: 'success',
-          processMessage: this.lng.process.success,
+          processMessages: [...this.state.processMessages, this.lng.encrypt.success],
         });
       }, 
       (error) => { 
         this.setState({ 
           processRuning: false,
           processState: 'error',
-          processMessage: this.lng.process.error + '\n\n' + error,
+          processMessages: [...this.state.processMessages, this.lng.encrypt.error + '\n\n' + error],
         });
         console.log(error);
       }
-    );    
+    ); 
+
+
+    });   
   }
 
-  handleEncrypt(event){
-    this.setState({ showProcessMessages: true, processRuning: true });
-    event.preventDefault();
+  encrypt(){
     this.encryption(this.messageForEncryptB64, "cfei");
   }
 
-  handleSignEncrypt(event){
-    event.preventDefault();
+  signEncrypt(){
     console.log('start SingEncrypt');
+    this.setState({ processMessages: [...this.state.processMessages, this.lng.sign.running] });
     const singProcess = sindejs.sing(this.messageForEncryptB64, this.FIEL.certificatePem, this.FIEL.keyPEM);
     singProcess.then(
       (messageSigned)=> {
         console.log('messageSigned');
         console.log(messageSigned);
         console.log('certinfo\n', sindejs.getCertInfo(this.FIEL.certificatePem));
+        this.setState({ processMessages: [...this.state.processMessages, this.lng.sign.success] });
         this.encryption(messageSigned, "cfe", sindejs.getCertInfo(this.FIEL.certificatePem));
       }, 
-      (error) => { console.log(error); }
+      (error) => { 
+        console.log(error); 
+        this.setState({ 
+          processRuning: false,
+          processState: 'error',
+          processMessages: [...this.state.processMessages, this.lng.sign.error + '\n\n' + error],
+        });
+      }
     );
+  }
+
+  handleProcess(event, process){
+    console.log('handleProcess process: ', process);
+    this.setState({
+      showProcessMessages: true,
+      processRuning: true,
+      processState: 'info',
+      processMessages: [this.lng.process.running],
+    }, () => {
+      setTimeout(() => {
+        if (process == 'encrypt') this.encrypt();
+        else this.signEncrypt();        
+      }, 1500);
+    });
   }
 
   validateFileForEncrypt(){
@@ -259,52 +296,40 @@ class BoxEncrypt extends React.Component {
           });
         }
       );
-      // const readFile = UtilsFIEL.readCertificateToPEM(file);
-      // readFile.then((data) => {
-      //   this.FIEL.certificatePem = data;
-      //   console.log('loaded certificate: ');
-      //   console.log(this.FIEL.certificatePem);
-
-      //   const validateCert = UtilsFIEL.validateCertificate(this.FIEL.certificatePem, this.FIEL.CA);
-      //   validateCert.then(
-      //     (message) => {
-      //       this.setState({ 
-      //         selectedCert: true,
-      //         selectedCertRunning: false,
-      //         selectedCertMessage: this.lng.cert.valid,
-      //         selectedCertValidation: 'success',
-      //       });
-      //     },
-      //     (error) => {
-      //       console.log();
-      //     }
-      //   );
-
-      // }, (err) => {
-      //   console.log('error in loading certificate: ', err);
-      //   this.setState({ 
-      //     selectedCert: false,
-      //     selectedCertRunning: false,
-      //     selectedCertMessage: this.lng.cert.error,
-      //     selectedCertValidation: 'error',
-      //   });
-      // });
     }, 1500);
   }
 
   loadKeyFIEL(file){
-    const readFile = UtilsFIEL.readKeyFIELToPEM(file, this.state.passPhrase);
-    readFile.then((data) => {
-      this.FIEL.keyPEM = data;
-      console.log('loaded key fiel: ');
-      console.log(this.FIEL.keyPEM);
-      this.setState({ selectedKey: true });
-    }, (err) => {
-      this.setState({ 
-        selectedKey: false, 
-        selectedKeyMessage: 'Error al desencriptar la llave, favor de validar la contraseña FIEL' 
-      });
-      console.log('error in loading key fiel: ', err);
+    this.setState({ 
+      showProcessMessages: false,
+      selectedKeyRunning: true,
+      selectedKeyMessage: this.lng.key.readRunning,
+      selectedKeyValidation: null,
+    }, () => {
+      setTimeout(() => {
+        const readFile = UtilsFIEL.readKeyFIELToPEM(file, this.state.passPhrase);
+        readFile.then((data) => {
+          this.FIEL.keyPEM = data;
+          console.log('loaded key fiel: ');
+          console.log(this.FIEL.keyPEM);
+          this.setState({
+            selectedKey: true,
+            selectedKeyRunning: false,
+            selectedKeyMessage: this.lng.key.valid,
+            selectedKeyValidation: 'success',
+          });      
+        }, (error) => {
+          console.log('error in loading key fiel: ', error);      
+          this.setState({
+            selectedKey: false,
+            selectedKeyRunning: false,
+            selectedKeyMessage: this.lng.key.error + '      --     ' + error.message,
+            selectedKeyValidation: 'error',
+          });
+          this.inputKey.value = "";
+        });
+
+      }, 1500);
     });
   }
 
@@ -335,14 +360,14 @@ class BoxEncrypt extends React.Component {
       </div>;
 
     const _buttonEncrypt = (this.state.selectedFile && !this.state.processRuning) 
-      ? <Button bsStyle="primary" onClick={this.handleEncrypt.bind(this)}>{this.lng.buttonEncrypt.label}</Button>
-      : <Button bsStyle="primary" disabled onClick={this.handleEncrypt.bind(this)}>{this.lng.buttonEncrypt.label}</Button>;
+      ? <Button bsStyle="primary" onClick={ event => { this.handleProcess(event, 'encrypt') } }>{this.lng.buttonEncrypt.label}</Button>
+      : <Button bsStyle="primary" disabled onClick={ event => { this.handleProcess(event, 'encrypt') } }>{this.lng.buttonEncrypt.label}</Button>;
 
     const _buttonSingEncrypt = (this.state.selectedFile && this.state.selectedCert 
       && this.state.selectedKey && this.state.passPhrase != '' && !this.state.processRuning)
-      ? <Button bsStyle="primary" onClick={this.handleSignEncrypt.bind(this)}>Firmar y Encriptar</Button>
-      : <Button bsStyle="primary" disabled onClick={this.handleSignEncrypt.bind(this)}>Firmar y Encriptar</Button>;
-
+      ? <Button bsStyle="primary" onClick={ event => { this.handleProcess(event, 'singandencrypt') } }>Firmar y Encriptar</Button>
+      : <Button bsStyle="primary" disabled onClick={ event => { this.handleProcess(event, 'singandencrypt') } }>Firmar y Encriptar</Button>;
+    
     const _button = (this.props.fiel) ? _buttonSingEncrypt : _buttonEncrypt;
 
     const _fielCertificate = (this.props.fiel) 
@@ -363,15 +388,15 @@ class BoxEncrypt extends React.Component {
       ? <FormGroup
           validationState={(this.state.passPhrase.length) ? 'success' : null }
         >
-          <ControlLabel>Contraseña para llave FIEL</ControlLabel>
+          <ControlLabel>{this.lng.passPhrase.label}</ControlLabel>
           <FormControl
             type="text"
             value={this.state.passPhrase}
-            placeholder="Ingresar contraseña FIEL"
+            placeholder={this.state.passPhrase.placeholder}
             onChange={this.handlePassPhrase.bind(this)}
           />
           <FormControl.Feedback />
-          <HelpBlock>Validation is based on string length.</HelpBlock>          
+          <HelpBlock>{this.lng.passPhrase.help}</HelpBlock>          
         </FormGroup>
       : null;
 
@@ -379,30 +404,48 @@ class BoxEncrypt extends React.Component {
     if (this.props.fiel){
       _fielKey = (this.state.passPhrase.length > 0)
         ?
-          <FormGroup controlId="formKey" validationState={(this.state.selectedKey) ? 'success' : null }>
-            <ControlLabel>Archivo llave FIEL (.key)</ControlLabel>
-            <FormControl type="file" accept=".key" onChange={ event => { this.handleLoadFile(event, 'keyFIEL') }} />
+          <FormGroup controlId="formKey" validationState={ this.state.selectedKeyValidation }>
+            <ControlLabel>{this.lng.key.label}</ControlLabel>
+            <FormControl type="file" accept=".key" onChange={ event => { this.handleLoadFile(event, 'keyFIEL') }}
+              ref={(input) => this.inputKey = input } />
             <FormControl.Feedback />
-            <HelpBlock>"ayudita"</HelpBlock>
+            <HelpBlock className="HelpBlockSpinner">
+              <div className={(this.state.selectedKeyRunning) ? "helpMessageSpinner" : "helpMessage"}>
+                {this.state.selectedKeyMessage}
+              </div>
+              {(this.state.selectedKeyRunning) ? _spinnerBlockHelp : null}
+            </HelpBlock>
           </FormGroup>
         :
-          <FormGroup controlId="formKey">
-            <ControlLabel>Archivo llave FIEL (.key)</ControlLabel>
-            <FormControl disabled type="file" onChange={ event => { this.handleLoadFile(event, 'keyFIEL') } } />
-            <HelpBlock>"ayudita"</HelpBlock>
-          </FormGroup>;
+          <FormGroup controlId="formKey" validationState={ this.state.selectedKeyValidation }>
+            <ControlLabel>{this.lng.key.label}</ControlLabel>
+            <FormControl disabled type="file" accept=".key" onChange={ event => { this.handleLoadFile(event, 'keyFIEL') }} />
+            <FormControl.Feedback />
+            <HelpBlock className="HelpBlockSpinner">
+              <div className={(this.state.selectedKeyRunning) ? "helpMessageSpinner" : "helpMessage"}>
+                {this.state.selectedKeyMessage}
+              </div>
+              {(this.state.selectedKeyRunning) ? _spinnerBlockHelp : null}
+            </HelpBlock>
+          </FormGroup>
+
     }
+
+    const _processMessages = this.state.processMessages.map((message, index) => { 
+      return <li key={"pmKey" + index }>{message}</li>;
+    });
 
     const _alert = (this.state.processRuning) 
       ? <Alert bsStyle={this.state.processState}>
-          {this.state.processMessage}
+          <ul>{_processMessages}</ul>
         </Alert>
       : <Alert bsStyle={this.state.processState}>
-          {this.state.processMessage}
-        </Alert>
+          <ul>{_processMessages}</ul>
+        </Alert>;
 
     return (
       <form>
+        <InputFile lng={this.lng.inputFile} />
         <FormGroup controlId="formFileEncrypt" validationState={this.state.selectedFileValidation}>
           <ControlLabel>{this.lng.fileToEncrypt.label}</ControlLabel>
           <FormControl type="file" onChange={ event => { this.handleLoadFile(event, 'fileForEncrypt') } } />
@@ -421,7 +464,9 @@ class BoxEncrypt extends React.Component {
         <br />
         <br />
         <Collapse in={this.state.showProcessMessages}>
-          {_alert}
+          <Alert bsStyle={this.state.processState}>
+            <ul>{_processMessages}</ul>
+          </Alert>
         </Collapse>
       </form>
 

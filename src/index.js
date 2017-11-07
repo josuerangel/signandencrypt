@@ -43,5 +43,5 @@ ReactDOM.render(
 	/>, 
 	document.getElementById('boxencrypt')
 	);
-// ReactDOM.render(<BoxDecrypt publicKey1={options.publicKeys.key1} publicKey2={options.publicKeys.key2} />, 
-// 	document.getElementById('boxdecrypt'));
+ReactDOM.render(<BoxDecrypt publicKey1={options.publicKeys.key1} publicKey2={options.publicKeys.key2} />, 
+	document.getElementById('boxdecrypt'));

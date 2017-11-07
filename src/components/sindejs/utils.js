@@ -237,6 +237,13 @@ export default class Utils {
         valid: 'Archivo valido para encriptación.',
         error: 'Ocurrió un error al leer el archivo a encriptar :: ',
       },
+      inputFile: {
+        label: 'Archivo a encriptar',
+        help: 'Recuerde que las extensiones deben ser validas, ejemplo: PDF, DOCX, XLSX, etc...',
+        running: 'Leyendo y convirtiendo archivo ... ',
+        success: 'Archivo valido para encriptación.',
+        error: 'Ocurrió un error al leer el archivo a encriptar :: ',
+      },      
       cert: {
         label: 'Certificado FIEL',
         help: 'Archivo con extensión .cert',
@@ -244,30 +251,66 @@ export default class Utils {
         valid: 'Certificado valido.',
         error: 'Ocurrió un error al leer el certificado.',
       },
+      passPhrase: {
+        label: 'Contraseña para llave FIEL',
+        placeholder: 'Ingresar contraseña FIEL',
+        help: 'Debe capturar la contraseña para habilidar la selección del archivo de la llave.'
+      },
+      key : {
+        label: 'Llave FIEL',
+        help: 'Seleccionar el archivo .key proporcionado por SAT',
+        readRunning: 'Leyendo y desencriptando llave FIEL ...',
+        valid: 'Llave desencriptada correctamente.',
+        error: 'Ocurrió un error al desencriptar la llave, favor de validar la constraseña de la llave FIEL.',
+      },
       buttonEncrypt: {
         label: 'Encriptar',
       },
+      encrypt: {
+        running: 'Encriptando archivo ... ',
+        success: 'Proceso de encriptación ejecutado correctamente.',
+        error: 'Ocurrió un error en el proceso de encriptación.'
+      },
+      sign: {
+        running: 'Firmando archivo ... ',
+        success: 'Proceso de firmado ejecutado correctamente.',
+        error: 'Ocurrió un errro en el proceso de firmado.'
+      },
       process: {
         label: 'Proceso:',
-        encryption: 'encriptación',
-        sign: 'firmado',
-        runing: 'ejecutando proceso ... ',
+        // encryption: 'encriptación',
+        // sign: 'firmado',
+        running: 'Ejecutando proceso ... ',
         success: 'Se ejecuto correctamente el proceso.',
         error: 'Se encontro un error durante el proceso.'
+      },
+      fileToDecrypt: {
+        label: 'Archivo a desencriptar',
+        help: 'Recuerde que las extensiones validas son: .CFE y .CFEI',
+        validateExtensions: 'Tipo de extensión inválida, extensiones no permitidas: ',
+        readRunning: 'Leyendo y convirtiendo archivo ... ',
+        valid: 'Archivo valido para desencriptar.',
+        error: 'Ocurrió un error al leer el archivo para desencriptar :: ',        
+      },
+      buttonDecrypt: {
+        label: 'Desencriptar'
+      },
+      passPhraseDecrypt: {
+        label: 'Contraseña para la llave privada',
+        placeholder: 'Ingrese contraseña para la llave privada',
+        help: 'Debe capturar la contraseña para habilidar la selección del archivo de la llave privada',
+      },
+      keyGPG: {
+        label: 'Llave privada GPG',
+        help: 'Seleccionar el archivo .gpg de su llave privada.',
+        readRunning: 'Leyendo y desencriptando llave GPG ...',
+        valid: 'Llave desencriptada correctamente.',
+        error: 'Ocurrió un error al desencriptar la llave, favor de validar la constraseña de la llave privada',        
       }
     };
 
     const _en = {
-      fileToEncrypt: {
-        label: 'File to encryption',
-        help: 'Remember that the extensions must be valid, example: PDF, DOCX, XLSX, etc ...',
-        validateExtensions: 'Invalid extension type, extensions not allowed: ',
-        valid: 'Valid file for encryption.',
-        error: 'An error occurred while reading the file to be encrypted :: ',
-      },
-      buttonEncrypt: {
-        label: 'Encrypt',
-      }
+      
     };
 
     return (language == 'sp') ? _sp : _en;

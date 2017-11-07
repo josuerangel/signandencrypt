@@ -47,11 +47,11 @@ export default class UtilsFIEL {
         // console.log('readCertificateFromURL response: ',response);
         return response.arrayBuffer();
       }).then((arraybuffer) => {
-        console.log('readCertificateFromURL arraybuffer: ', arraybuffer);
+        // console.log('readCertificateFromURL arraybuffer: ', arraybuffer);
         const certHex = jsrsasign.ArrayBuffertohex(arraybuffer);
         
         let  certPem = jsrsasign.hextorstr(certHex);
-        console.log('readCertificateFromURL _certStr: ', certPem);
+        // console.log('readCertificateFromURL _certStr: ', certPem);
         
         if (!certPem.startsWith('-----BEGIN CERTIFICATE-----'))
           certPem = jsrsasign.KJUR.asn1.ASN1Util.getPEMStringFromHex(certHex, "CERTIFICATE");
@@ -144,7 +144,7 @@ export default class UtilsFIEL {
           resolve(prvkeyPem);
         }
         catch(e){
-          reject(Error('Error readKeyFIELToPEM: ' + e));
+          reject(Error('error to decrypt key - ' + e));
         }
       };
       reader.readAsArrayBuffer(file);
