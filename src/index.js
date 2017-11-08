@@ -4,7 +4,7 @@ import ReactDOM from 'react-dom';
 import BoxEncrypt from './components/box-encrypt/index.jsx';
 // import BoxDecrypt from './components/box-decrypt/index.jsx';
 import ModalEncrypt from './components/modal-encrypt/index.jsx';
-// import ModalDecrypt from './components/modal-decrypt/index.jsx';
+import ModalDecrypt from './components/modal-decrypt/index.jsx';
 // import EncryptButtons from './components/encrypt-buttons/index.jsx';
 
 const _sp = {
@@ -218,7 +218,7 @@ const options = {
 
 ReactDOM.render(<ModalEncrypt options={options} />, document.getElementById('modalEncrypt'));
 
-// ReactDOM.render(<ModalDecrypt options={options} />, document.getElementById('modalDecrypt'));
+ReactDOM.render(<ModalDecrypt options={options} />, document.getElementById('modalDecrypt'));
 
 // ReactDOM.render(<BoxTest publicKey1={options.publicKeys.key1} publicKey2={options.publicKeys.key2} />,
 // 	document.getElementById('boxtest'));

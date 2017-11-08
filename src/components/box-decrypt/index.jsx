@@ -185,7 +185,7 @@ class BoxDecrypt extends React.Component{
           <HelpBlock>{this.lng.passPhraseDecrypt.help}</HelpBlock>          
         </FormGroup>;
 
-    const _inputKey1 = <InputFile lng={this.lng.privateKey1} enabled={(this.state.passPhraseKey1.length > 0) ? true : false } process={this.loadPrivateKey1.bind(this)} valid={ (state) => { this.setState({ selectedKey1 : state }) }} />
+    const _inputKey1 = <InputFile accept=".gpg" lng={this.lng.privateKey1} enabled={(this.state.passPhraseKey1.length > 0) ? true : false } process={this.loadPrivateKey1.bind(this)} valid={ (state) => { this.setState({ selectedKey1 : state }) }} />
 
 		const _passPhraseKey2 = 
 			<FormGroup validationState={(this.state.passPhraseKey2.length) ? 'success' : null } >
@@ -200,11 +200,11 @@ class BoxDecrypt extends React.Component{
           <HelpBlock>{this.lng.passPhraseDecrypt.help}</HelpBlock>          
         </FormGroup>;
 
-    const _inputKey2 = <InputFile lng={this.lng.privateKey2} enabled={(this.state.passPhraseKey2.length > 0) ? true : false } process={this.loadPrivateKey2.bind(this)} valid={ (state) => { this.setState({ selectedKey2 : state }) }} />
+    const _inputKey2 = <InputFile accept=".gpg" lng={this.lng.privateKey2} enabled={(this.state.passPhraseKey2.length > 0) ? true : false } process={this.loadPrivateKey2.bind(this)} valid={ (state) => { this.setState({ selectedKey2 : state }) }} />
 
 		return (
 			<form>
-				<InputFile lng={this.lng.fileToDecrypt} process={this.loadFileForDecrypt.bind(this)} valid={ (state) => { this.setState({ selectedFile : state }) }} />
+				<InputFile accept=".cfe, .cfei" lng={this.lng.fileToDecrypt} process={this.loadFileForDecrypt.bind(this)} valid={ (state) => { this.setState({ selectedFile : state }) }} />
 				{_passPhraseKey1}
         {_inputKey1}
         {_passPhraseKey2}

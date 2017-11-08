@@ -251,7 +251,7 @@ class BoxEncrypt extends React.Component {
 
   render() {
     const _cert = (this.props.fiel)
-      ? <InputFile lng={this.lng.cert} process={this.loadCertificate.bind(this)} valid={ (state) => { this.setState({ selectedCert : state }) }} />
+      ? <InputFile accept=".cer" lng={this.lng.cert} process={this.loadCertificate.bind(this)} valid={ (state) => { this.setState({ selectedCert : state }) }} />
       : null;
 
     const _fielPassPhrase = (this.props.fiel)
@@ -269,7 +269,7 @@ class BoxEncrypt extends React.Component {
       : null;
 
     const _key = (this.props.fiel)
-      ? <InputFile lng={this.lng.key} enabled={(this.state.passPhrase.length > 0) ? true : false } process={this.loadKeyFIEL.bind(this)} valid={ (state) => { this.setState({ selectedKey : state }) }} />
+      ? <InputFile accept=".key" lng={this.lng.key} enabled={(this.state.passPhrase.length > 0) ? true : false } process={this.loadKeyFIEL.bind(this)} valid={ (state) => { this.setState({ selectedKey : state }) }} />
       : null;
 
     const _buttonEncrypt = (this.state.selectedFile && !this.state.processRuning)

@@ -88,8 +88,8 @@ class InputFile extends React.Component {
       </div>;
 
     const _control = (this.props.enabled)
-    	? <FormControl type="file" onChange={ this.handleLoadFile.bind(this) } />
-    	: <FormControl disabled type="file" onChange={ this.handleLoadFile.bind(this) } />;
+    	? <FormControl type="file" accept={this.props.accept} onChange={ this.handleLoadFile.bind(this) } />
+    	: <FormControl disabled type="file" accept={this.props.accept} onChange={ this.handleLoadFile.bind(this) } />;
 
     // const _controlInput = (this.props.enabled)
     // 	? <input onChange={this.handleLoadFile.bind(this)} type="file" name="file-1[]" id="file-1" className="inputfile inputfile-2" data-multiple-caption="{count} files selected" multiple />
@@ -115,12 +115,14 @@ class InputFile extends React.Component {
 }
 
 InputFile.defaultProps = {
+	accept: '*',
 	enabled: true,
 	process: () => {},
 	valid: () => {},
 };
 
 InputFile.propType = {
+	accept: PropTypes.string,
 	lng : PropTypes.object.isRequired,
 	enabled: PropTypes.bool,
 	process: PropTypes.func,
