@@ -64,7 +64,7 @@ export default class UtilsFIEL {
     });    
   }
 
-  static validateCertificateOSCP(cert, certCA, url = "../../filter/SvtFIEL?option=validateCert"){
+  static validateCertificateOSCP(cert, certCA, url){
     return new Promise((resolve, reject) => {
       console.log('validateCertificateOSCP');
       let haveValid = false;

@@ -6,8 +6,10 @@ var Visualizer = require('webpack-visualizer-plugin');
 module.exports = {
   entry: {
     // "app.min": [__dirname + '/src'],
-    "boxencrypt-standalone.min": [__dirname + '/src/components/wrapper/standalone-box-encrypt.js'],
+    // "boxencrypt-standalone.min": [__dirname + '/src/components/wrapper/standalone-box-encrypt.js'],
     // "boxdecrypt-standalone.min": [__dirname + '/src/components/wrapper/standalone-box-decrypt.js'],
+    "modalencrypt-standalone.min": [__dirname + '/src/components/wrapper/standalone-modal-encrypt.js'],
+    "modaldecrypt-standalone.min": [__dirname + '/src/components/wrapper/standalone-modal-decrypt.js'],
   },
   output: {
     path: path.resolve(__dirname, 'bundles'),
@@ -51,15 +53,19 @@ module.exports = {
     ]
   },
   plugins: [
-    // new webpack.LoaderOptionsPlugin({
-    //   minimize: true,
-    //   debug: false
+    new webpack.LoaderOptionsPlugin({
+      minimize: true,
+      debug: false
+    }),
+    // new webpack.DefinePlugin({
+    //   'process.env':{
+    //     'NODE_ENV': JSON.stringify('production')
+    //   }
     // }),
     new webpack.DefinePlugin({
-      'process.env':{
-        'NODE_ENV': JSON.stringify('production')
-      }
+      'process.env.NODE_ENV': '"production"'
     }),
+    
     new webpack.optimize.UglifyJsPlugin({
       beatify:false,
       comments: false,
@@ -70,12 +76,33 @@ module.exports = {
       compress:{
         screw_ie8: true,
         warnings: false,
-        // drop_console: true
+        drop_console: true
       }
-   }),
-   // new webpack.optimize.DedupePlugin(),
-   new webpack.optimize.AggressiveMergingPlugin(),
-   new Visualizer(),
+    }),
+     
+    
+    // new webpack.optimize.UglifyJsPlugin({
+    //   mangle: true,
+    //   compress: {
+    //     warnings: false, // Suppress uglification warnings
+    //     pure_getters: true,
+    //     unsafe: true,
+    //     unsafe_comps: true,
+    //     screw_ie8: true
+    //   },
+    //   output: {
+    //     comments: false,
+    //   },
+    //   exclude: [/\.min\.js$/gi] // skip pre-minified libs
+    // }), 
+
+    // new webpack.IgnorePlugin(/^\.\/locale$/, [/moment$/]),
+
+    new webpack.NoEmitOnErrorsPlugin(),
+
+    new webpack.optimize.AggressiveMergingPlugin(),
+
+    new Visualizer(),
   ],
   resolve: {
     alias: {
@@ -86,6 +113,6 @@ module.exports = {
   externals: {
     'react': 'React',
     'react-dom': 'ReactDOM',
-    'jsrsasign': 'jsrsasign'
+    'jsrsasign': 'jsrsasign',
   }
 };

@@ -36,7 +36,7 @@
   "dependencies": {
     "asn1js": "^2.0.15",
     "babel-polyfill": "^6.26.0",
-    "elemental": "^0.6.1",
+    "deepcopy": "^0.6.3",
     "fetch": "^1.1.0",
     "file-saver": "^1.3.3",
     "halogen": "^0.2.0",
@@ -46,6 +46,7 @@
     "openpgp": "^2.5.8",
     "pdfmake": "^0.1.33",
     "pkijs": "^2.1.5",
+    "prop-types": "latest",
     "react-addons-css-transition-group": "^15.6.2",
     "react-bootstrap": "^0.31.5",
     "text-encoding": "^0.6.4"

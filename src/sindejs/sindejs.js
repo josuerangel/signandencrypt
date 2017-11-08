@@ -4,8 +4,10 @@ import Utils from './utils.js';
 import UtilsFIEL from './utils_fiel.js'
 import moment from 'moment';
 import * as asn1js from "asn1js";
-import { RSAPublicKey, ContentInfo, EncapsulatedContentInfo, SignedData } from 'pkijs';
-import { bufferToHexCodes } from "pvutils";
+import RSAPublicKey from '../../node_modules/pkijs/build/RSAPublicKey.js';
+import ContentInfo from '../../node_modules/pkijs/build/ContentInfo.js';
+import EncapsulatedContentInfo from '../../node_modules/pkijs/build/EncapsulatedContentInfo.js';
+import SignedData from '../../node_modules/pkijs/build/SignedData.js';
 
 export default class sindejs {
   constructor(parameters = {}) {
@@ -194,7 +196,7 @@ export default class sindejs {
     let resultCertInfo = '';
     const certificate = signeddata.certificates[0];    
 
-    resultCertInfo += 'SerialNumber: ' + bufferToHexCodes(certificate.serialNumber.valueBlock.valueHex);
+    resultCertInfo += 'SerialNumber: ' + jsrsasign.ArrayBuffertohex(certificate.serialNumber.valueBlock.valueHex);
 
     //region Put information about X.509 certificate issuer
     resultCertInfo += '\nIssuer: '
@@ -568,7 +570,7 @@ export default class sindejs {
    * @param  {[type]} CA   [description]
    * @return {[type]}      [description]
    */
-  static readAndValidateCertificate(file, CA){
+  static readAndValidateCertificate(file, CA, OSCPUrl){
     return new Promise((resolve, reject) => {
       console.log('readAndValidateCertificate');
       const readCert = UtilsFIEL.readCertificateToPEM(file);
@@ -576,7 +578,7 @@ export default class sindejs {
         console.log('loaded certificate: ');
         console.log(data);
 
-        const validateCert = UtilsFIEL.validateCertificateOSCP(data, CA);
+        const validateCert = UtilsFIEL.validateCertificateOSCP(data, CA, OSCPUrl);
         validateCert.then(
           (valid) => {
             console.log('readAndValidateCertificate valid: ', valid);

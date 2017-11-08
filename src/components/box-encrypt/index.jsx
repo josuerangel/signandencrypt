@@ -1,8 +1,8 @@
 import React from 'react';
 import PropTypes from 'prop-types';
-import sindejs from '../sindejs/sindejs.js';
-import Utils from '../sindejs/utils.js';
-import UtilsFIEL from '../sindejs/utils_fiel.js';
+import sindejs from '../../sindejs/sindejs.js';
+import Utils from '../../sindejs/utils.js';
+import UtilsFIEL from '../../sindejs/utils_fiel.js';
 import * as FileSaver from 'file-saver';
 import pdfMake from "pdfmake/build/pdfmake";
 import pdfFonts from "pdfmake/build/vfs_fonts";
@@ -22,15 +22,15 @@ class BoxEncrypt extends React.Component {
   constructor(props) {
     super(props);
 
-    this.messageForEncryptB64;
+    this.messageForEncryptB64 = null;
     this.dataFileForEncrypt = {};
     this.publicKeys = {};
     this.privateKeys = {};
     this.CA = [];
     this.FIEL = {};
-    this.lng = Utils.getMessages(this.props.language);
+    this.lng = this.props.language;
 
-    this.inputKey;
+    this.inputKey = null;
 
     this.state = {
       passPhrase: '',
@@ -50,13 +50,13 @@ class BoxEncrypt extends React.Component {
   componentDidMount(){
     const _loadPublicKey1 = sindejs.loadPublicKey(this.props.publicKey1);
     _loadPublicKey1.then(
-      (key) => { this.publicKeys.key1 = key; console.log('_loadKey1'); console.log(this.publicKeys.key1); }, 
+      (key) => { this.publicKeys.key1 = key; console.log('_loadKey1'); console.log(this.publicKeys.key1); },
       (error) => { console.log(error) }
     );
 
     const _loadPublicKey2 = sindejs.loadPublicKey(this.props.publicKey2);
     _loadPublicKey2.then(
-      (key) => { this.publicKeys.key2 = key; console.log('_loadKey2'); console.log(this.publicKeys.key2); }, 
+      (key) => { this.publicKeys.key2 = key; console.log('_loadKey2'); console.log(this.publicKeys.key2); },
       (error) => { console.log(error) }
     );
 
@@ -77,9 +77,9 @@ class BoxEncrypt extends React.Component {
           console.log(error);
         }
       );
-    }    
+    }
   }
- 
+
   handlePassPhrase(event) {
     event.preventDefault();
     console.log(event.target.value);
@@ -88,7 +88,7 @@ class BoxEncrypt extends React.Component {
 
   encryption(message, extension, certificate){
     console.log('start Encrypt');
-    this.setState({ processMessages: [...this.state.processMessages, this.lng.encrypt.running]}, 
+    this.setState({ processMessages: [...this.state.processMessages, this.lng.encrypt.running]},
     () => {
 
 
@@ -110,25 +110,25 @@ class BoxEncrypt extends React.Component {
           size: blobfile.size + 3
         }
         pdfMake.createPdf(sindejs.getPdfDefinition(this.publicKeys, dataFilesPDF, this.props.language)).download(nameFile + '.acuseGeneracion.pdf');
-        FileSaver.saveAs(blobfile, nameFile);     
-        this.setState({ 
+        FileSaver.saveAs(blobfile, nameFile);
+        this.setState({
           processRuning: false,
           processState: 'success',
           processMessages: [...this.state.processMessages, this.lng.encrypt.success],
         });
-      }, 
-      (error) => { 
-        this.setState({ 
+      },
+      (error) => {
+        this.setState({
           processRuning: false,
           processState: 'error',
           processMessages: [...this.state.processMessages, this.lng.encrypt.error + '\n\n' + error],
         });
         console.log(error);
       }
-    ); 
+    );
 
 
-    });   
+    });
   }
 
   encrypt(){
@@ -146,10 +146,10 @@ class BoxEncrypt extends React.Component {
         console.log('certinfo\n', sindejs.getCertInfo(this.FIEL.certificatePem));
         this.setState({ processMessages: [...this.state.processMessages, this.lng.sign.success] });
         this.encryption(messageSigned, "cfe", sindejs.getCertInfo(this.FIEL.certificatePem));
-      }, 
-      (error) => { 
-        console.log(error); 
-        this.setState({ 
+      },
+      (error) => {
+        console.log(error);
+        this.setState({
           processRuning: false,
           processState: 'error',
           processMessages: [...this.state.processMessages, this.lng.sign.error + '\n\n' + error],
@@ -168,7 +168,7 @@ class BoxEncrypt extends React.Component {
     }, () => {
       setTimeout(() => {
         if (process == 'encrypt') this.encrypt();
-        else this.signEncrypt();        
+        else this.signEncrypt();
       }, 1500);
     });
   }
@@ -178,7 +178,7 @@ class BoxEncrypt extends React.Component {
 
     // validate extensions
     const _badExtension = this.props.blockedExtensions.includes(this.dataFileForEncrypt.encryptExtension);
-    if (_badExtension) 
+    if (_badExtension)
       _messageValidate = this.lng.fileToEncrypt.validateExtensions + this.props.blockedExtensions.join(',');
 
     // validate max size
@@ -203,7 +203,7 @@ class BoxEncrypt extends React.Component {
         return;
       }
 
-      // read file for convert to B64 
+      // read file for convert to B64
       const readFile = Utils.readFileToB64(file);
       readFile.then((data) => {
         this.messageForEncryptB64 = data;
@@ -219,13 +219,14 @@ class BoxEncrypt extends React.Component {
     return new Promise((resolve, reject) => {
       console.log('loadCertificate');
 
-      const _cert = sindejs.readAndValidateCertificate(file, this.FIEL.CA);
+      console.log(this.props);
+      const _cert = sindejs.readAndValidateCertificate(file, this.FIEL.CA, this.props.OSCPUrl);
       _cert.then(
-        (cert) => { 
+        (cert) => {
           this.FIEL.certificatePem = cert;
           resolve();
         },
-        (error) => { 
+        (error) => {
           console.log('error in loading certificate: ', error);
           reject({ message: error.message });
         }
@@ -242,7 +243,7 @@ class BoxEncrypt extends React.Component {
         console.log(this.FIEL.keyPEM);
         resolve();
       }, (error) => {
-        console.log('error in loading key fiel: ', error);  
+        console.log('error in loading key fiel: ', error);
         reject({ message: error.message });
       });
     });
@@ -263,7 +264,7 @@ class BoxEncrypt extends React.Component {
               onChange={this.handlePassPhrase.bind(this)}
             />
             <FormControl.Feedback />
-          <HelpBlock>{this.lng.passPhrase.help}</HelpBlock>          
+          <HelpBlock>{this.lng.passPhrase.help}</HelpBlock>
         </FormGroup>
       : null;
 
@@ -271,18 +272,18 @@ class BoxEncrypt extends React.Component {
       ? <InputFile lng={this.lng.key} enabled={(this.state.passPhrase.length > 0) ? true : false } process={this.loadKeyFIEL.bind(this)} valid={ (state) => { this.setState({ selectedKey : state }) }} />
       : null;
 
-    const _buttonEncrypt = (this.state.selectedFile && !this.state.processRuning) 
+    const _buttonEncrypt = (this.state.selectedFile && !this.state.processRuning)
       ? <Button bsStyle="primary" onClick={ event => { this.handleProcess(event, 'encrypt') } }>{this.lng.buttonEncrypt.label}</Button>
       : <Button bsStyle="primary" disabled onClick={ event => { this.handleProcess(event, 'encrypt') } }>{this.lng.buttonEncrypt.label}</Button>;
 
-    const _buttonSingEncrypt = (this.state.selectedFile && this.state.selectedCert 
+    const _buttonSingEncrypt = (this.state.selectedFile && this.state.selectedCert
       && this.state.selectedKey && this.state.passPhrase != '' && !this.state.processRuning)
       ? <Button bsStyle="primary" onClick={ event => { this.handleProcess(event, 'singandencrypt') } }>Firmar y Encriptar</Button>
       : <Button bsStyle="primary" disabled onClick={ event => { this.handleProcess(event, 'singandencrypt') } }>Firmar y Encriptar</Button>;
-    
+
     const _button = (this.props.fiel) ? _buttonSingEncrypt : _buttonEncrypt;
 
-    const _processMessages = this.state.processMessages.map((message, index) => { 
+    const _processMessages = this.state.processMessages.map((message, index) => {
       return <li key={"pmKey" + index }>{message}</li>;
     });
 
@@ -308,7 +309,6 @@ class BoxEncrypt extends React.Component {
 
 BoxEncrypt.defaultProps = {
   fiel: true,
-  language: 'en',
   blockedExtensions: [],
   maxSize: 0,
 };
@@ -317,10 +317,9 @@ BoxEncrypt.propTypes = {
   publicKey1: PropTypes.string.isRequired,
   publicKey2: PropTypes.string.isRequired,
   fiel: PropTypes.bool,
-  CA: PropTypes.array,
-  OSCP: PropTypes.array,
-  language: PropTypes.string,
-  blockedExtensions: PropTypes.array,
+  CA: PropTypes.arrayOf(PropTypes.string),
+  language: PropTypes.object.isRequired,
+  blockedExtensions: PropTypes.arrayOf(PropTypes.string),
   maxSize: PropTypes.number,
 };
 

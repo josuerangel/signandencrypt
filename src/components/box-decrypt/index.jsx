@@ -1,8 +1,8 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 import mime from 'mime-types';
-import Utils from '../sindejs/utils.js';
-import sindejs from '../sindejs/sindejs.js';
+import Utils from '../../sindejs/utils.js';
+import sindejs from '../../sindejs/sindejs.js';
 import * as FileSaver from 'file-saver';
 import pdfMake from "pdfmake/build/pdfmake";
 import pdfFonts from "pdfmake/build/vfs_fonts";
@@ -37,14 +37,14 @@ class BoxDecrypt extends React.Component{
 		this.dataFileForDecrypt = {};
 		this.privateKeys = {};
 		this.publicKeys = {};
-		this.lng = Utils.getMessages(this.props.language);
+		this.lng = this.props.language;
 
 		this.state = {
 			selectedFile: false,
 			selectedKey1: false,
 			selectedKey2: false,
-			passPhraseKey1: '12345678a',
-			passPhraseKey2: '12345678a',
+			passPhraseKey1: '',
+			passPhraseKey2: '',
 			showProcessMessages: false,
 		}
 	}
@@ -215,14 +215,10 @@ class BoxDecrypt extends React.Component{
 	}
 };
 
-BoxDecrypt.defaultProps = {
-	language: 'sp'
-};
-
 BoxDecrypt.propTypes = {
 	publicKey1: PropTypes.string.isRequired,
 	publicKey2: PropTypes.string.isRequired,
-	language: PropTypes.string
+	language: PropTypes.object.isRequired
 }
 
 module.exports = BoxDecrypt;
