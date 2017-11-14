@@ -131,15 +131,33 @@ export default class UtilsFIEL {
     });
   }
 
-  static readKeyFIELToPEM(file, passPhrase){
+  static readKeyFIELToPEM(file, passPhrase, cert){
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
       reader.onload = event => {
         const data = event.target.result;
         try{
+          const certificate = new jsrsasign.X509();
+          console.log('readKeyFIELToPEM certificate: ', certificate);
+          certificate.readCertPEM(cert);
+          console.log('readKeyFIELToPEM certificate after read: ', certificate);
+          const pubkey = certificate.getPublicKey();
+          console.log('readKeyFIELToPEM pubkey: ', pubkey);
+          const pubkeyhex = pubkey.n.toString(16);
+          console.log('readKeyFIELToPEM pubkey hex: ', pubkeyhex);
+
           const prvp8hex = jsrsasign.ArrayBuffertohex(data);
           const prvp8pem = jsrsasign.KJUR.asn1.ASN1Util.getPEMStringFromHex(prvp8hex, 'ENCRYPTED PRIVATE KEY');
           const prvkey = jsrsasign.KEYUTIL.getKey(prvp8pem, passPhrase);
+          console.log('readKeyFIELToPEM prvkey: ', prvkey);
+          const prvkeyhex = prvkey.n.toString(16);
+          console.log('readKeyFIELToPEM prvkey hex: ', prvkeyhex);
+
+          if (pubkeyhex !== prvkeyhex){
+            reject(Error('Key file does not match with X509 cetrificate'));
+            return;
+          }
+
           const prvkeyPem = jsrsasign.KEYUTIL.getPEM(prvkey, "PKCS8PRV");
           resolve(prvkeyPem);
         }

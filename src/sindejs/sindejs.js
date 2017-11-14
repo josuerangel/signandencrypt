@@ -322,7 +322,7 @@ export default class sindejs {
       };
 
       try{
-      openpgp.encrypt(options).then((ciphertext) => {
+        openpgp.encrypt(options).then((ciphertext) => {
         console.log('fisrt pass encrypted: ', ciphertext);
         options.data = ciphertext.data;
         options.publicKeys = keys.key2;
@@ -400,7 +400,6 @@ export default class sindejs {
   static loadPublicKey(url) {
     return new Promise((resolve, reject) => {
       fetch(url, this.fetchInit).then((response) => {
-        // console.log(response);
         return response.arrayBuffer();
       }).then((arraybuffer) => {
         console.log('loadPublicKey arraybuffer loaded: ', arraybuffer);

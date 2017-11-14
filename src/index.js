@@ -223,19 +223,19 @@ ReactDOM.render(<ModalDecrypt options={options} />, document.getElementById('mod
 // ReactDOM.render(<BoxTest publicKey1={options.publicKeys.key1} publicKey2={options.publicKeys.key2} />,
 // 	document.getElementById('boxtest'));
 
-ReactDOM.render(
-	<BoxEncrypt
-		fiel={options.fiel.show}
-		CA={options.fiel.certificate.CA}
-    OSCPUrl={options.fiel.certificate.OSCPUrl}
-		publicKey1={options.publicKeys.key1}
-		publicKey2={options.publicKeys.key2}
-		blockedExtensions={options.blockedExtensions}
-		language={options.language}
-		maxSize={options.maxSize}
-	/>,
-	document.getElementById('boxencrypt')
-	);
+// ReactDOM.render(
+// 	<BoxEncrypt
+// 		fiel={options.fiel.show}
+// 		CA={options.fiel.certificate.CA}
+//     OSCPUrl={options.fiel.certificate.OSCPUrl}
+// 		publicKey1={options.publicKeys.key1}
+// 		publicKey2={options.publicKeys.key2}
+// 		blockedExtensions={options.blockedExtensions}
+// 		language={options.language}
+// 		maxSize={options.maxSize}
+// 	/>,
+// 	document.getElementById('boxencrypt')
+// 	);
 
 // ReactDOM.render(<BoxDecrypt language={options.language} publicKey1={options.publicKeys.key1} publicKey2={options.publicKeys.key2} />,
 // 	document.getElementById('boxdecrypt'));
