@@ -5,6 +5,7 @@ import Popover from 'react-bootstrap/lib/Popover';
 import Tooltip from 'react-bootstrap/lib/Tooltip';
 import OverlayTrigger from 'react-bootstrap/lib/OverlayTrigger';
 import BoxEncrypt from '../box-encrypt/index.jsx';
+import '../css/style.styl';
 
 export class ModalEncrypt extends Component {
   constructor(props){
@@ -32,8 +33,8 @@ export class ModalEncrypt extends Component {
 			<div style={ _style }>
 				<Button bsStyle="primary" onClick={this.open.bind(this)} >{ this.props.options.language.modal.buttonLauncher }</Button>
 				<Modal show={this.state.showModal} onHide={this.close.bind(this)}>
-          <Modal.Header closeButton>
-            <Modal.Title>{this.props.options.language.modal.header}</Modal.Title>
+          <Modal.Header className="box-encrypt-header" closeButton>
+            <Modal.Title className="box-encrypt-header-text">{this.props.options.language.modal.header}</Modal.Title>
           </Modal.Header>
           <Modal.Body>
           	<BoxEncrypt
@@ -47,9 +48,6 @@ export class ModalEncrypt extends Component {
 							maxSize={options.maxSize}
 						/>
           </Modal.Body>
-          <Modal.Footer>
-            <Button onClick={this.close.bind(this)}>{this.props.options.language.modal.buttonClose}</Button>
-          </Modal.Footer>
         </Modal>				
 			</div>
 		);

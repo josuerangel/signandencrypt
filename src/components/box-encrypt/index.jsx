@@ -215,28 +215,42 @@ class BoxEncrypt extends React.Component {
     });
   }
 
+  beforeLoadCertificate(file){
+    this.setState({ passPhrase: '' });
+  }
+
   loadCertificate(file){
     return new Promise((resolve, reject) => {
       console.log('loadCertificate');
-
-      console.log(this.props);
-      const _cert = sindejs.readAndValidateCertificate(file, this.FIEL.CA, this.props.OSCPUrl);
-      _cert.then(
-        (cert) => {
-          this.FIEL.certificatePem = cert;
-          resolve();
-        },
-        (error) => {
-          console.log('error in loading certificate: ', error);
-          reject({ message: error.message });
-        }
-      );
+        console.log(this.props);
+        let rejectMessage = this.lng.cert.error;
+        const _cert = sindejs.readAndValidateCertificate(file, this.FIEL.CA, this.props.OSCPUrl);
+        _cert.then(
+          (cert) => {
+            this.FIEL.certificatePem = cert;
+            resolve();
+          },
+          (error) => {
+            console.log('error in loading certificate message: ', error.message);
+            switch(error.message){
+              case 'notValid':
+                rejectMessage = this.lng.cert.notValid;
+                break;
+              case 'invalidSession':
+                rejectMessage = this.lng.cert.invalidSession;
+                break;
+              default:
+                rejectMessage = this.lng.cert.error;
+            }
+            reject({ message: rejectMessage });
+          }
+        );
     });
   }
 
   loadKeyFIEL(file){
     return new Promise((resolve, reject) => {
-      const readFile = UtilsFIEL.readKeyFIELToPEM(file, this.state.passPhrase);
+      const readFile = UtilsFIEL.readKeyFIELToPEM(file, this.state.passPhrase, this.FIEL.certificatePem);
       readFile.then((data) => {
         this.FIEL.keyPEM = data;
         console.log('loaded key fiel: ');
@@ -251,10 +265,10 @@ class BoxEncrypt extends React.Component {
 
   render() {
     const _cert = (this.props.fiel)
-      ? <InputFile accept=".cer" lng={this.lng.cert} process={this.loadCertificate.bind(this)} valid={ (state) => { this.setState({ selectedCert : state }) }} />
+      ? <InputFile  accept="application/pkix-cert" lng={this.lng.cert} beforeProcess={ this.beforeLoadCertificate.bind(this) } process={this.loadCertificate.bind(this)} valid={ (state) => { this.setState({ selectedCert : state }) }} />
       : null;
 
-    const _fielPassPhrase = (this.props.fiel)
+    const _passPhrase = (this.state.selectedCert)
       ? <FormGroup validationState={(this.state.passPhrase.length) ? 'success' : null } >
           <ControlLabel>{this.lng.passPhrase.label}</ControlLabel>
             <FormControl
@@ -266,10 +280,25 @@ class BoxEncrypt extends React.Component {
             <FormControl.Feedback />
           <HelpBlock>{this.lng.passPhrase.help}</HelpBlock>
         </FormGroup>
+      : <FormGroup validationState={(this.state.passPhrase.length) ? 'success' : null } >
+          <ControlLabel>{this.lng.passPhrase.label}</ControlLabel>
+            <FormControl
+              disabled
+              type="text"
+              value={this.state.passPhrase}
+              placeholder={this.state.passPhrase.placeholder}
+              onChange={this.handlePassPhrase.bind(this)}
+            />
+            <FormControl.Feedback />
+          <HelpBlock>{this.lng.passPhrase.help}</HelpBlock>
+        </FormGroup>;
+
+    const _fielPassPhrase = (this.props.fiel)
+      ? _passPhrase
       : null;
 
     const _key = (this.props.fiel)
-      ? <InputFile accept=".key" lng={this.lng.key} enabled={(this.state.passPhrase.length > 0) ? true : false } process={this.loadKeyFIEL.bind(this)} valid={ (state) => { this.setState({ selectedKey : state }) }} />
+      ? <InputFile accept=".key" lng={this.lng.key} reset={this.state.passPhrase} enabled={(this.state.passPhrase.length > 0) ? true : false } process={this.loadKeyFIEL.bind(this)} valid={ (state) => { this.setState({ selectedKey : state }) }} />
       : null;
 
     const _buttonEncrypt = (this.state.selectedFile && !this.state.processRuning)
@@ -289,18 +318,24 @@ class BoxEncrypt extends React.Component {
 
     return (
       <form>
-        <InputFile lng={this.lng.inputFile} process={this.loadFileForEncrypt.bind(this)} valid={ (state) => { this.setState({ selectedFile : state }) }} />
+        <InputFile lng={this.lng.fileToEncrypt} process={this.loadFileForEncrypt.bind(this)} valid={ (state) => { this.setState({ selectedFile : state }) }} />
         {_cert}
         {_fielPassPhrase}
         {_key}
-        {_button}
-        <br />
-        <br />
-        <Collapse in={this.state.showProcessMessages}>
-          <Alert bsStyle={this.state.processState}>
-            <ul>{_processMessages}</ul>
-          </Alert>
-        </Collapse>
+        <div className="box-encrypt-footer">
+          <hr />
+          <div className="containerButton">
+            {_button}
+            <br />
+            <br />
+            <Collapse in={this.state.showProcessMessages}>
+              <Alert bsStyle={this.state.processState}>
+                <ul>{_processMessages}</ul>
+              </Alert>
+            </Collapse>            
+            <p className="box-encrypt-footer-message">{this.lng.modal.footerMessage}<strong className="box-encrypt-footer-message-number">{this.lng.modal.footerMessageNumber}</strong></p>
+          </div>
+        </div>
       </form>
 
     )

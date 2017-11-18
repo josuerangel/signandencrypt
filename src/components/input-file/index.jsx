@@ -5,18 +5,31 @@ import FormGroup from 'react-bootstrap/lib/FormGroup';
 import ControlLabel from 'react-bootstrap/lib/ControlLabel';
 import FormControl from 'react-bootstrap/lib/FormControl';
 import HelpBlock from 'react-bootstrap/lib/HelpBlock';
+import Utils from '../../sindejs/utils.js';
 import '../css/spinner.styl';
-// import '../css/input-file.styl';
 
 class InputFile extends React.Component {
 	constructor(props){
 		super(props);
 
 		this.state = {
+			theInputKey: props.reset,
 			validation: null,
 			running: false,
 			help: this.props.lng.help,
-			// label: 'Choose a file...',
+		}
+	}
+
+	componentWillReceiveProps(nextProps) {
+		// console.log('componentWillReceiveProps nextProps: ', nextProps);
+		// console.log('componentWillReceiveProps this.props: ', this.props);
+		if (nextProps.reset !== this.props.reset){
+			this.setState({ 
+				theInputKey: nextProps.reset,
+				validation: null,
+				running: false,
+				help: this.props.lng.help,
+			});			
 		}
 	}
 
@@ -36,31 +49,55 @@ class InputFile extends React.Component {
 	}
 
 	rejectEvent(reject){
-		console.log('InputFile rejectEvent reject: ', reject, this);
-
-		const _messageReject = (reject.message === undefined ) ? '' : reject.message;
-		const _message = this.props.lng.error + '   ' + _messageReject;
+		console.log('InputFile rejectEvent reject: ', reject);
+		const _message = (reject.message === undefined) ? this.props.lng.error : reject.message;
+		console.log('InputFile rejectEvent _message: ', _message);
 		this.setState({
+			theInputKey: Math.random().toString(36),
 			running: false,
 			help: _message,
 			validation: 'error',
 		}, this.handleChange(false));
 	}
 
+	launchBeforeProcess(file){
+		if (typeof this.props.beforeProcess === 'function') {
+			this.props.beforeProcess();
+		}
+	};
 
 	handleLoadFile(event){
 		console.log('InputFile handleLoadFile event', event);
+		console.log('InputFile handleLoadFile event.target.value', event.target.value);
+		this.inputFile = event;
 		event.preventDefault();
 		const file = event.target.files[0];
+
+    if (this.props.accept != "*"){
+	    const _dataFile = Utils.getOriginalDataFromName(file.name);
+  	  console.log('InputFile handleLoadFile _dataFile: ', _dataFile);
+  	  console.log('InputFile handleLoadFile contains: ', this.props.accept.includes);
+  	  const _ext = '.' + _dataFile.encryptExtension;
+  	  console.log('InputFile handleLoadFile _ext: ', _ext);
+  	  const validExtension = this.props.accept.split(',').map(ext => { return ext.trim() }).includes(_ext);
+  	  console.log('InputFile handleLoadFile validExtension: ', validExtension);
+  	  if (!validExtension){
+  	  	this.rejectEvent({ message: this.props.lng.invalidExtension });
+  	  	return;
+  	  }
+    }
 
 		this.setState({
       running: true,
       help: this.props.lng.running,
       validation: null,
-      // label: file.name,
 		}, () => {
+			this.launchBeforeProcess(file);
 			setTimeout(() => {
 				if (typeof this.props.process === 'function') {
+					// const _ext = fileExtension(file.name);
+					// console.log('handleLoadFile _ext: ', _ext);
+
 					const _promise = this.props.process(file);
 					console.log('InputFile callProcess process promise: ', _promise);
 
@@ -88,15 +125,12 @@ class InputFile extends React.Component {
       </div>;
 
     const _control = (this.props.enabled)
-    	? <FormControl type="file" accept={this.props.accept} onChange={ this.handleLoadFile.bind(this) } />
+    	? <FormControl key={ this.state.theInputKey || '' } type="file" accept={this.props.accept} onChange={ this.handleLoadFile.bind(this) } />
     	: <FormControl disabled type="file" accept={this.props.accept} onChange={ this.handleLoadFile.bind(this) } />;
 
-    // const _controlInput = (this.props.enabled)
-    // 	? <input onChange={this.handleLoadFile.bind(this)} type="file" name="file-1[]" id="file-1" className="inputfile inputfile-2" data-multiple-caption="{count} files selected" multiple />
-    // 	: <input disabled="disabled" onChange={this.handleLoadFile.bind(this)} type="file" name="file-1[]" id="file-1" className="inputfile inputfile-2" data-multiple-caption="{count} files selected" multiple />;
-    // const _controlLabel = (this.props.enabled)
-    // 	? <label htmlFor="file-1"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="17" viewBox="0 0 20 17"><path d="M10 0l-5.2 4.9h3.3v5.1h3.8v-5.1h3.3l-5.2-4.9zm9.3 11.5l-3.2-2.1h-2l3.4 2.6h-3.5c-.1 0-.2.1-.2.1l-.8 2.3h-6l-.8-2.2c-.1-.1-.1-.2-.2-.2h-3.6l3.4-2.6h-2l-3.2 2.1c-.4.3-.7 1-.6 1.5l.6 3.1c.1.5.7.9 1.2.9h16.3c.6 0 1.1-.4 1.3-.9l.6-3.1c.1-.5-.2-1.2-.7-1.5z"/></svg> <span>{ this.state.label }</span></label>
-    // 	: <label disabled="disabled" htmlFor="file-1"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="17" viewBox="0 0 20 17"><path d="M10 0l-5.2 4.9h3.3v5.1h3.8v-5.1h3.3l-5.2-4.9zm9.3 11.5l-3.2-2.1h-2l3.4 2.6h-3.5c-.1 0-.2.1-.2.1l-.8 2.3h-6l-.8-2.2c-.1-.1-.1-.2-.2-.2h-3.6l3.4-2.6h-2l-3.2 2.1c-.4.3-.7 1-.6 1.5l.6 3.1c.1.5.7.9 1.2.9h16.3c.6 0 1.1-.4 1.3-.9l.6-3.1c.1-.5-.2-1.2-.7-1.5z"/></svg> <span>{ this.state.label }</span></label>
+    const _help = (this.state.help.map !== undefined)
+    	? <ul>{ this.state.help.map( (message, index) => { return <li key={"helpMessage"+index}>{message}</li> }) } </ul>
+    	: this.state.help;
 
 		return (
       <FormGroup validationState={ this.state.validation }>
@@ -105,7 +139,7 @@ class InputFile extends React.Component {
         <FormControl.Feedback />
         <HelpBlock className="HelpBlockSpinner">
           <div className={ (this.state.running) ? "helpMessageSpinner" : "helpMessage" }>
-            { this.state.help }
+            { _help }
           </div>
           { (this.state.running) ? _spinnerBlockHelp : null }
         </HelpBlock>
@@ -117,16 +151,20 @@ class InputFile extends React.Component {
 InputFile.defaultProps = {
 	accept: '*',
 	enabled: true,
+	beforeProcess: () => {},
 	process: () => {},
 	valid: () => {},
+	reset: 'init',
 };
 
 InputFile.propType = {
 	accept: PropTypes.string,
 	lng : PropTypes.object.isRequired,
 	enabled: PropTypes.bool,
+	beforeProcess: PropTypes.func,
 	process: PropTypes.func,
 	valid: PropTypes.func,
+	reset: PropTypes.string,
 };
 
 module.exports = InputFile;

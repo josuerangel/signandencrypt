@@ -9,27 +9,21 @@ import ModalDecrypt from './components/modal-decrypt/index.jsx';
 
 const _sp = {
   fileToEncrypt: {
-    label: 'Archivo a encriptar',
-    help: 'Recuerde que las extensiones deben ser validas, ejemplo: PDF, DOCX, XLSX, etc...',
-    validateExtensions: 'Tipo de extensión inválida, extensiones no permitidas: ',
-    validateMaxSize: 'El archivo NombreDelArchivo.extensión supera el tamaño límite de ',
-    readRunning: 'Leyendo y convirtiendo archivo ... ',
-    valid: 'Archivo valido para encriptación.',
+    label: 'Archivo a firmar y encriptar',
+    help: 'Extensiones no permitidas: pages, exe, xml, flv, mp3, mp4, avi y wma',
+    running: 'Validando archivo . . . ',
+    success: 'Archivo válido para encriptación',
     error: 'Ocurrió un error al leer el archivo a encriptar :: ',
   },
-  inputFile: {
-    label: 'Archivo a encriptar',
-    help: 'Recuerde que las extensiones deben ser validas, ejemplo: PDF, DOCX, XLSX, etc...',
-    running: 'Leyendo y convirtiendo archivo ... ',
-    success: 'Archivo valido para encriptación.',
-    error: 'Ocurrió un error al leer el archivo a encriptar :: ',
-  },      
   cert: {
-    label: 'Certificado FIEL',
-    help: 'Archivo con extensión .cert',
-    running: 'Leyendo, convirtiendo y validando certificado ... ',
-    success: 'Certificado valido.',
-    error: 'Ocurrió un error al leer el certificado.',
+    label: 'Certificado digital (Archivo .cer de FIEL)',
+    help: 'Archivo con extensión .cer',
+    running: 'Validando archivo .cer . . . ',
+    success: 'Certificado válido',
+    error: 'Ocurrió un error al validar el certificado',
+    invalidExtension: ['Certificado no válido', 'Extensiones permitidas: .cer'],
+    notValid: 'Certificado no vigente',
+    invalidSession: 'Imposible validar certificado, la sesión ha expirado'
   },
   passPhrase: {
     label: 'Contraseña para llave FIEL',
@@ -66,9 +60,10 @@ const _sp = {
     label: 'Archivo a desencriptar',
     help: 'Recuerde que las extensiones validas son: .CFE y .CFEI',
     validateExtensions: 'Tipo de extensión inválida, extensiones no permitidas: ',
+    invalidExtension: ['Archivo no válido', 'Extensiones permitidas: .cfe, .cfei'],
     running: 'Leyendo y convirtiendo archivo ... ',
     success: 'Archivo valido para desencriptar.',
-    error: 'Ocurrió un error al leer el archivo para desencriptar :: ',        
+    error: 'Ocurrió un error al leer el archivo para desencriptar',
   },
   buttonDecrypt: {
     label: 'Desencriptar'
@@ -83,19 +78,21 @@ const _sp = {
     help: 'Seleccionar el archivo .gpg de su llave privada.',
     running: 'Leyendo y desencriptando llave GPG ...',
     success: 'Llave desencriptada correctamente.',
-    error: 'Ocurrió un error al desencriptar la llave, favor de validar la constraseña de la llave privada',        
-  },      
+    error: 'Ocurrió un error al desencriptar la llave, favor de validar la constraseña de la llave privada',
+  },
   privateKey2: {
     label: 'Llave privada GPG 2',
     help: 'Seleccionar el archivo .gpg de su llave privada.',
     running: 'Leyendo y desencriptando llave GPG ...',
     success: 'Llave desencriptada correctamente.',
-    error: 'Ocurrió un error al desencriptar la llave, favor de validar la constraseña de la llave privada',        
+    error: 'Ocurrió un error al desencriptar la llave, favor de validar la constraseña de la llave privada',
   },
   modal: {
-  	buttonLauncher: 'Firmar propuestas nacionales',
-  	header : 'Firmar propuestas',
-  	buttonClose: 'Cerrar',
+    buttonLauncher: 'Firmar Propuesta Nacional',
+    header : 'Firmar Propuest Nacional',
+    buttonClose: 'Cerrar',
+    footerMessage: 'Para obtener asistencia técnica comuniquese al télefono',
+    footerMessageNumber: '+ 52 (55) 5000 4200',
   }
 };
 
@@ -193,12 +190,12 @@ const _en = {
 
 const options = {
 	publicKeys: {
-		key1 : 'http://localhost:8080/apps2012/vendors/sindejs/QApgp1.gpg',
+		key1 : 'http://localhost:8080/apps2012/vendors/sindejs/CFEpgp1.gpg',
 		key2 : 'http://localhost:8080/apps2012/vendors/sindejs/QApgp2.gpg'
 	},
 	language: _sp,
 	fiel: {
-		show: true,
+		show: false,
 		certificate: {
 			CA: [
 				'http://localhost:8080/apps2012/vendors/sindejs/AC0_SAT.cer',

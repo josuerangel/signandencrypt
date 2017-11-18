@@ -18,21 +18,19 @@ export default class UtilsFIEL {
    */
   static readCertificateToPEM(file){
     return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = event => {
-        const data = event.target.result;
-        try {
+      try {
+        const reader = new FileReader();
+        reader.onload = event => {
+          const data = event.target.result;
           const certHex = jsrsasign.ArrayBuffertohex(data);
           const certPem = jsrsasign.KJUR.asn1.ASN1Util.getPEMStringFromHex(certHex, "CERTIFICATE");
-
-
           resolve(certPem);
-        }
-        catch (e) {
-          reject(Error('Error readCertificateToPEM: ' + e));
-        }
-      };
-      reader.readAsArrayBuffer(file);
+        };
+        reader.readAsArrayBuffer(file);
+      }
+      catch (error) {
+        reject(error);
+      }
     });
   }
 
@@ -89,7 +87,7 @@ export default class UtilsFIEL {
         else reject(Error('Not valid OSCP'));
       }).catch(reason => {
         console.log('catch reason: ', reason);
-        reject(Error(reason));
+        reject(Error(reason.message));
       });
     });
   }
@@ -115,18 +113,21 @@ export default class UtilsFIEL {
             resolve(responseJSON.ResponseData[0]);
           else{
             if (responseJSON.ResponseError[0].ErrorType == "LoginError")
-              reject("Session error");
+              reject(Error('invalidSession'));
             else
-              reject(responseJSON.ResponseError[0].ErrorMessage);
+              reject(Error(responseJSON.ResponseError[0].ErrorMessage));
           }
 
         })
         .catch((error)=>{
-          reject(Error('Error _validateCertificate :: ' + error.message));
+          // reject(Error('Error in fetch _validateCertificate :: ' + error.message));
+          reject(Error('invalidFetch'));
         });
       }
-      catch(error){
-        reject(Error('Error _validateCertificate :: ' + error));
+      catch(error){ // Here error is a simple string, dosen't have error structure.
+        console.log('Primary error in _validateCertificate :: ', error);
+        // reject(Error('Primary error in _validateCertificate :: ' + error));
+        reject(Error('notValid'));
       }
     });
   }

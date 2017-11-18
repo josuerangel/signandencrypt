@@ -31,7 +31,7 @@ export default class Utils {
     return new Promise((resolve, reject) => {
       let message = { data: '', type : '', dataUTF8: '' };
       const reader = new FileReader();
-      const openpgp = require('openpgp');
+      // const openpgp = require('openpgp');
 
       // utf8 message
       reader.onload = event => {
@@ -138,26 +138,70 @@ export default class Utils {
     }
   }
 
+  /**
+   * Get valid public key for encrypt from PEM key 
+   * @param  {String} keyPEM utf8 key
+   * @return {KEY}        Class OpenPGP KEY
+   */
+  static getPublicKey(keyPEM){
+      const keyHeader = openpgp.key.readArmored(keyPEM);
+      const key = openpgp.key.readArmored(keyPEM).keys[0];
+      if (key.verifyPrimaryKey() != openpgp.enums.keyStatus.valid || key.length == 0)
+        return false
+      return key;
+  }
+
+  static getPrivateKey(keyPEM, passPhrase){
+    const readKey = openpgp.key.readArmored(keyPEM);
+    let privKeyObj = readKey.keys[0];
+    console.log('Utils readKeyPGP text privKeyObj: ', privKeyObj);
+    const resultDecryptKey = privKeyObj.decrypt(passPhrase);
+    console.log('resultDecryptKey', resultDecryptKey);
+    if (!resultDecryptKey) return false
+    else return privKeyObj;
+  }
+
+  /**
+   * Get valid private key from file
+   * @param  {File} file       File binary or text
+   * @param  {String} passPhrase Password for decrypt private key
+   * @return {KEY}            Class OpenPGP KEY
+   */
   static readKeyPGP(file, passPhrase){
     return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = event => {
-        const data = event.target.result;        
-        try{
-          const bytes = new Uint8Array(data);
-          const keyArmored = openpgp.armor.encode(openpgp.enums.armor.private_key, bytes);
-          const readKey = openpgp.key.readArmored(keyArmored);
-          let privKeyObj = readKey.keys[0];
-          const resultDecryptKey = privKeyObj.decrypt(passPhrase);
-          console.log('resultDecryptKey', resultDecryptKey);
-          if (!resultDecryptKey) reject(Error('Error decrypting key, check passPhrase'));
-          resolve(privKeyObj);
-        }
-        catch(error){
-          reject(Error('Error reading openpgp key file: ' + error.message));
-        }
+      try {
+        const reader = new FileReader();
+
+        reader.onload = event => {          
+          const keyPEM = event.target.result;
+          if (keyPEM.startsWith('-----BEGIN PGP PRIVATE KEY BLOCK-----')){
+            const key = Utils.getPrivateKey(keyPEM, passPhrase);
+            if (key == false)
+              reject(Error('dontReadPrivateKey'));
+            else
+              resolve(key);
+            return;
+          }
+          else {
+            reader.onload = event => {
+              const keyBinary = event.target.result;
+              const bytes = new Uint8Array(keyBinary);
+              const keyPEM = openpgp.armor.encode(openpgp.enums.armor.private_key, bytes);
+              const key = Utils.getPrivateKey(keyPEM, passPhrase);
+              if (key == false)
+                reject(Error('dontReadPrivateKey'));
+              else
+                resolve(key);
+              return;
+            }
+            reader.readAsArrayBuffer(file);            
+          }
+        };
+        reader.readAsText(file);
       }
-      reader.readAsArrayBuffer(file);
+      catch (error) {
+        reject(Error('dontReadPrivateKey'));
+      }
     });
   }
 

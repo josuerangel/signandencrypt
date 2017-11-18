@@ -402,14 +402,40 @@ export default class sindejs {
       fetch(url, this.fetchInit).then((response) => {
         return response.arrayBuffer();
       }).then((arraybuffer) => {
-        console.log('loadPublicKey arraybuffer loaded: ', arraybuffer);
-        const keyPEM = Utils._arrayBufferToPublicKeyPEM(arraybuffer);
-        const keyHeader = openpgp.key.readArmored(keyPEM);
-        const key = openpgp.key.readArmored(keyPEM).keys[0];
-        if (key.verifyPrimaryKey() != openpgp.enums.keyStatus.valid)
-          reject(Error('Error loading public key is not valid, url: ' + url));
-        if (key.length == 0) reject(Error('Error loading public key, url: ' + url));
-        resolve(key);
+        console.log('loadPublicKey arraybuffer: ', arraybuffer);
+        const _temp = new File([arraybuffer], "tempPublicKey.gpg");
+        
+        let reader = new FileReader();
+        reader.onload = event => {
+          let keyPEM = event.target.result;
+          console.log('loadPublicKey readAsText: ', keyPEM);
+          console.log('loadPublicKey readAsText startsWith: ', keyPEM.startsWith('-----BEGIN PGP PUBLIC KEY BLOCK-----'));
+          
+          if (keyPEM.startsWith('-----BEGIN PGP PUBLIC KEY BLOCK-----')){
+            let key = Utils.getPublicKey(keyPEM);
+            if (key == false)
+              reject(Error('dontReadPublicKey'));
+            else
+              resolve(key);
+            return;
+          }
+          else {
+            reader = new FileReader();
+            reader.onload = event => {
+              const keyBinary = event.target.result;
+              keyPEM = Utils._arrayBufferToPublicKeyPEM(keyBinary);
+              let key = Utils.getPublicKey(keyPEM);
+              if (key == false)
+                reject(Error('dontReadPublicKey'));
+              else
+                resolve(key);
+              return;
+            };
+            reader.readAsArrayBuffer(_temp);
+          }
+        };
+        reader.readAsText(_temp);
+
       }).catch((error) => {
         reject(Error('Error loading public key, url: ' + url + '\n' + error.message));
       });
@@ -584,14 +610,14 @@ export default class sindejs {
             resolve(data);
           },
           (error) => {
-            console.log('Error readAndValidateCertificate\n' + error.message);
-            reject(Error('Error readAndValidateCertificate\n' + error.message));
+            console.log('Error readAndValidateCertificate', error);
+            reject(Error(error.message));
           }
         );
 
       }, (error) => {
-        console.log('Error readAndValidateCertificate\n' + error.message);
-        reject(Error('Error readAndValidateCertificate\n' + error.message));
+        console.log('Error readAndValidateCertificate', error);
+        reject(error);
       });
     });
   }
