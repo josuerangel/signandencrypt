@@ -17,6 +17,7 @@ import Alert from 'react-bootstrap/lib/Alert';
 import Collapse from 'react-bootstrap/lib/Collapse';
 
 import InputFile from '../input-file/index.jsx';
+import Loader from 'halogen/RingLoader';
 
 /**
  * Props:
@@ -45,7 +46,11 @@ class BoxDecrypt extends React.Component{
 			selectedKey2: false,
 			passPhraseKey1: '',
 			passPhraseKey2: '',
+			processMessages: [],
+			processRunning: false,
+			processState: null,
 			showProcessMessages: false,
+			resetInputs: '',
 		}
 	}
 
@@ -84,10 +89,15 @@ class BoxDecrypt extends React.Component{
 	  }
 	  pdfMake.createPdf(sindejs.getPdfDefinition(this.publicKeys, dataFilesPDF, this.props.language, 'decrypt')).download(nameFile + '.acuseDesencriptacion.pdf');
 		FileSaver.saveAs(blobfile, this.dataFileForDecrypt.originalName);
+		this.setState({ 
+			processRunning: false, 
+			passPhraseKey1: '',
+			passPhraseKey2: '',
+			resetInputs: Math.random().toString(36).substring(7),  
+		});
   }
 
-	handleDecrypt(){
-		console.log('handleDecrypt init');
+  decrypt(){
 		const _decrypt = sindejs.decrypt(this.dataFileForDecrypt.data, this.dataFileForDecrypt.type, this.publicKeys, this.privateKeys);
 		_decrypt.then(
 			(cms) => {
@@ -110,9 +120,36 @@ class BoxDecrypt extends React.Component{
 				}
 			},
 			(error) => {
-				console.log(error);
+				console.log('handleDecrypt reject: ', error);
+				let _msg = this.lng.process.error;
+				switch(error.message){
+					case 'firstKeyInvalidForDecrypt':
+						_msg = this.lng.privateKey1.invalidForDecrypt;
+						break;
+					case 'secondKeyInvalidForDecrypt':
+						_msg = this.lng.privateKey2.invalidForDecrypt;
+						break;						
+					default:
+						_msg = this.lng.process.error;
+				}
+				let _processMessages = this.state.processMessages.concat(_msg);
+				this.setState({ 
+					processRunning: false, 
+					processMessages: _processMessages, 
+					showProcessMessages: true, 
+					processState: 'danger' 
+				});
 			}
-		);
+		);  	
+  }
+
+	handleDecrypt(){
+		console.log('handleDecrypt init');
+		this.setState(
+			{ processRunning: true, processMessages: [], showProcessMessages: false }, 
+			() => { 
+				setTimeout(() => { this.decrypt(); }, 1500);
+		});
 	}
 
 	loadFileForDecrypt(file){
@@ -127,7 +164,7 @@ class BoxDecrypt extends React.Component{
 	      console.log('loaded and parse file for decrypt: ', this.dataFileForDecrypt);
 	      resolve();
 	    }, (error) => {
-	      console.log(error);
+	      console.log('loadFileForDecrypt', error);
 	      reject({ message: error });
 	    });
   	});
@@ -145,7 +182,15 @@ class BoxDecrypt extends React.Component{
 				}, 
 				(error) => { 
 					console.log('loadPrivateKey1 error: ', error);
-					reject({ message: error.message });
+					let _msg = '';
+					switch(error.message){
+						case 'dontReadPrivateKey':
+							_msg = this.lng.privateKey1.invalidPassphrase;
+							break;
+						default:
+							_msg = this.lng.privateKey1.error;
+					}
+					reject({ message: _msg });
 				});
 		});
 	}
@@ -162,54 +207,131 @@ class BoxDecrypt extends React.Component{
 				}, 
 				(error) => { 
 					console.log('loadPrivateKey2 error: ', error);
-					reject({ message: error.message });
+					let _msg = '';
+					switch(error.message){
+						case 'dontReadPrivateKey':
+							_msg = this.lng.privateKey2.invalidPassphrase;
+							break;
+						default:
+							_msg = this.lng.privateKey2.error;
+					}					
+					reject({ message: _msg });
 				});
 		});
 	}
 
 	render(){
+    const _spinnerButton =
+      <div className="spinnerContainer">
+        <Loader color="#F7FDFA" size="32px" margin="4px"/>
+      </div>;
+
+    const _buttonDecrypting = 
+      <Button bsStyle="primary" disabled>
+        <div className="box-encrypt-text-encripting">
+          { this.lng.buttonProcess.labelDecrypt }
+        </div>
+        {_spinnerButton}
+      </Button>;
+
     const _buttonDecrypt = (this.state.selectedFile && this.state.selectedKey1 && this.state.selectedKey2) 
       ? <Button bsStyle="primary" onClick={this.handleDecrypt.bind(this)}>{this.lng.buttonDecrypt.label}</Button>
       : <Button bsStyle="primary" disabled onClick={this.handleDecrypt.bind(this)}>{this.lng.buttonDecrypt.label}</Button>;
 
-		const _passPhraseKey1 = 
-			<FormGroup validationState={(this.state.passPhraseKey1.length) ? 'success' : null } >
-          <ControlLabel>{this.lng.passPhraseDecrypt.label + " 1"}</ControlLabel>
+   	const _finalButton = (this.state.processRunning) ? _buttonDecrypting : _buttonDecrypt;
+
+		const _passPhraseKey1 = (!this.state.processRunning)
+			? <FormGroup validationState={(this.state.passPhraseKey1.length) ? 'success' : null } >
+          <ControlLabel>{this.lng.passPhraseKey1.label}</ControlLabel>
           <FormControl
             type="text"
             value={this.state.passPhraseKey1}
-            placeholder={this.lng.passPhraseDecrypt.placeholder + " 1"}
-            onChange={ event => { this.setState({ passPhraseKey1: event.target.value }) }}
+            placeholder={this.lng.passPhraseKey1.placeholder}
+            onChange={ event => { this.setState({ passPhraseKey1: event.target.value.trim() }) }}
           />
           <FormControl.Feedback />
-          <HelpBlock>{this.lng.passPhraseDecrypt.help}</HelpBlock>          
+          <HelpBlock>{(this.state.passPhraseKey1.length > 0) ? this.lng.passPhraseKey1.success : this.lng.passPhraseKey1.help}</HelpBlock>
+        </FormGroup>
+      : <FormGroup validationState={(this.state.passPhraseKey1.length) ? 'success' : null } >
+          <ControlLabel>{this.lng.passPhraseKey1.label}</ControlLabel>
+          <FormControl
+          	disabled
+            type="text"
+            value={this.state.passPhraseKey1}
+            placeholder={this.lng.passPhraseKey1.placeholder}
+            onChange={ event => { this.setState({ passPhraseKey1: event.target.value.trim() }) }}
+          />
+          <FormControl.Feedback />
+          <HelpBlock>{(this.state.passPhraseKey1.length > 0) ? this.lng.passPhraseKey1.success : this.lng.passPhraseKey1.help}</HelpBlock>          
         </FormGroup>;
 
-    const _inputKey1 = <InputFile accept=".gpg" lng={this.lng.privateKey1} enabled={(this.state.passPhraseKey1.length > 0) ? true : false } process={this.loadPrivateKey1.bind(this)} valid={ (state) => { this.setState({ selectedKey1 : state }) }} />
+    const _inputKey1 = <InputFile accept=".gpg" lng={this.lng.privateKey1} 
+    	enabled={((this.state.passPhraseKey1.length > 0) ? true : false) && !this.state.processRunning } 
+    	reset={this.state.passPhraseKey1} 
+    	process={this.loadPrivateKey1.bind(this)} valid={ (state) => { this.setState({ selectedKey1 : state }) }} />
 
-		const _passPhraseKey2 = 
-			<FormGroup validationState={(this.state.passPhraseKey2.length) ? 'success' : null } >
-          <ControlLabel>{this.lng.passPhraseDecrypt.label + " 2"}</ControlLabel>
+		const _passPhraseKey2 = (!this.state.processRunning)
+			? <FormGroup validationState={(this.state.passPhraseKey2.length) ? 'success' : null } >
+          <ControlLabel>{this.lng.passPhraseKey2.label}</ControlLabel>
           <FormControl
             type="text"
             value={this.state.passPhraseKey2}
-            placeholder={this.lng.passPhraseDecrypt.placeholder + " 2"}
-            onChange={ event => { this.setState({ passPhraseKey2: event.target.value }) }}
+            placeholder={this.lng.passPhraseKey2.placeholder}
+            onChange={ event => { this.setState({ passPhraseKey2: event.target.value.trim() }) }}
           />
           <FormControl.Feedback />
-          <HelpBlock>{this.lng.passPhraseDecrypt.help}</HelpBlock>          
+          <HelpBlock>{(this.state.passPhraseKey2.length > 0) ? this.lng.passPhraseKey2.success : this.lng.passPhraseKey2.help}</HelpBlock>          
+        </FormGroup>
+      : <FormGroup validationState={(this.state.passPhraseKey2.length) ? 'success' : null } >
+          <ControlLabel>{this.lng.passPhraseKey2.label}</ControlLabel>
+          <FormControl
+          	disabled
+            type="text"
+            value={this.state.passPhraseKey2}
+            placeholder={this.lng.passPhraseKey2.placeholder}
+            onChange={ event => { this.setState({ passPhraseKey2: event.target.value.trim() }) }}
+          />
+          <FormControl.Feedback />
+          <HelpBlock>{(this.state.passPhraseKey2.length > 0) ? this.lng.passPhraseKey2.success : this.lng.passPhraseKey2.help}</HelpBlock>          
         </FormGroup>;
 
-    const _inputKey2 = <InputFile accept=".gpg" lng={this.lng.privateKey2} enabled={(this.state.passPhraseKey2.length > 0) ? true : false } process={this.loadPrivateKey2.bind(this)} valid={ (state) => { this.setState({ selectedKey2 : state }) }} />
+    const _inputKey2 = <InputFile accept=".gpg" lng={this.lng.privateKey2} reset={this.state.passPhraseKey2} 
+    	enabled={((this.state.passPhraseKey2.length > 0) ? true : false) && !this.state.processRunning } 
+    	process={this.loadPrivateKey2.bind(this)} valid={ (state) => { this.setState({ selectedKey2 : state }) }} />
+
+    const _processMessages = this.state.processMessages.map((message, index) => {
+      return <li key={"pmKey" + index }>{message}</li>;
+    });
 
 		return (
 			<form>
-				<InputFile accept=".cfe, .cfei" lng={this.lng.fileToDecrypt} process={this.loadFileForDecrypt.bind(this)} valid={ (state) => { this.setState({ selectedFile : state }) }} />
+				<InputFile accept=".cfe, .cfei" lng={this.lng.fileToDecrypt} 
+					reset={this.state.resetInputs} 
+					enabled={!this.state.processRunning}
+					process={this.loadFileForDecrypt.bind(this)} 
+					valid={ (state) => { this.setState({ selectedFile : state }) }} />
 				{_passPhraseKey1}
         {_inputKey1}
         {_passPhraseKey2}
         {_inputKey2}       
-        {_buttonDecrypt}
+        <div className="box-encrypt-footer">
+          <hr />
+          <div className="containerButton">
+        		{_finalButton}
+            <br />
+            <br />
+            <Collapse in={this.state.showProcessMessages}>
+              <Alert bsStyle={this.state.processState}>
+                <ul>{_processMessages}</ul>
+              </Alert>
+            </Collapse>                        
+            <p className="box-encrypt-footer-message">{this.lng.modal.footerMessage}
+              <strong className="box-encrypt-footer-message-number">
+                {this.lng.modal.footerMessageNumber}
+              </strong>
+            </p>
+          </div>
+        </div>        
 			</form>
 		)
 	}

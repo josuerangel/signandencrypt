@@ -14,6 +14,8 @@ const _sp = {
     running: 'Validando archivo . . . ',
     success: 'Archivo válido para encriptación',
     error: 'Ocurrió un error al leer el archivo a encriptar :: ',
+    invalidExtension: ['Archivo {originalName} no permitido', 'Extensiones no permitidas: {blockedExtensions}'],
+    invalidSize: 'El archivo {originalName} supera el tamaño límite de {sizeMax} MB'
   },
   cert: {
     label: 'Certificado digital (Archivo .cer de FIEL)',
@@ -26,20 +28,33 @@ const _sp = {
     invalidSession: 'Imposible validar certificado, la sesión ha expirado'
   },
   passPhrase: {
-    label: 'Contraseña para llave FIEL',
-    placeholder: 'Ingresar contraseña FIEL',
-    help: 'Debe capturar la contraseña para habilidar la selección del archivo de la llave.'
+    label: 'Clave de acceso (Contraseña FIEL)',
+    placeholder: '',
+    help: 'Clave de acceso del archivo FIEL',
+    success: 'Contraseña válida',
   },
   key : {
-    label: 'Llave FIEL',
-    help: 'Seleccionar el archivo .key proporcionado por SAT',
-    running: 'Leyendo y desencriptando llave FIEL ...',
-    success: 'Llave desencriptada correctamente.',
-    error: 'Ocurrió un error al desencriptar la llave, favor de validar la constraseña de la llave FIEL.',
+    label: 'Llave privada (Archivo .key de FIEL)',
+    help: 'Archivo con extensión .key',
+    running: 'Validando archivo .key . . ."',
+    success: 'Llave válida',
+    error: 'Ocurrió un error al validar la llave',
+    notCurrent: 'Llave no vigente',
+    invalidExtension: ['Llave no válida', 'Extensiones permitidas: .key'],
+    notMatchKeyWithCert: 'Llave incorrecta',
+    invalidPassphrase: 'Clave de acceso incorrecta, favor de revisar la contraseña FIEL',
   },
   buttonEncrypt: {
     label: 'Encriptar',
   },
+  buttonSignEncrypt: {
+    label: 'Firmar y Encriptar',
+  },
+  buttonProcess: {
+    labelEncrypt: 'Encriptando . . .',
+    labelSignEncrypt: 'Firmando y encriptando . . .',
+    labelDecrypt: 'Desencriptando . . . ',
+  },  
   encrypt: {
     running: 'Encriptando archivo ... ',
     success: 'Proceso de encriptación ejecutado correctamente.',
@@ -58,34 +73,47 @@ const _sp = {
   },
   fileToDecrypt: {
     label: 'Archivo a desencriptar',
-    help: 'Recuerde que las extensiones validas son: .CFE y .CFEI',
+    help: 'Extensiones permitidas: CFE y CFEI',
     validateExtensions: 'Tipo de extensión inválida, extensiones no permitidas: ',
-    invalidExtension: ['Archivo no válido', 'Extensiones permitidas: .cfe, .cfei'],
-    running: 'Leyendo y convirtiendo archivo ... ',
-    success: 'Archivo valido para desencriptar.',
+    invalidExtension: ['Archivo {originalName} no permitido', 'Extensiones permitidas: CFE y CFEI'],
+    running: 'Validando archivo . . . ',
+    success: 'Archivo validado para desencriptación',
     error: 'Ocurrió un error al leer el archivo para desencriptar',
   },
   buttonDecrypt: {
     label: 'Desencriptar'
   },
-  passPhraseDecrypt: {
-    label: 'Contraseña para la llave privada',
-    placeholder: 'Ingrese contraseña para la llave privada',
-    help: 'Debe capturar la contraseña para habilidar la selección del archivo de la llave privada',
-  },
+  passPhraseKey1: {
+    label: 'Clave de acceso (Clave PGP 1)',
+    placeholder: '',
+    help: 'Clave de acceso del archivo PGP 1',
+    success: 'Contraseña válida',
+  },  
+  passPhraseKey2: {
+    label: 'Clave de acceso (Clave PGP 2)',
+    placeholder: '',
+    help: 'Clave de acceso del archivo PGP 2',
+    success: 'Contraseña válida',
+  },  
   privateKey1: {
-    label: 'Llave privada GPG 1',
-    help: 'Seleccionar el archivo .gpg de su llave privada.',
-    running: 'Leyendo y desencriptando llave GPG ...',
-    success: 'Llave desencriptada correctamente.',
-    error: 'Ocurrió un error al desencriptar la llave, favor de validar la constraseña de la llave privada',
+    label: 'Llave privada (Clave PGP 1)',
+    help: 'Archivo con extensión .gpg',
+    running: 'Validando archivo .gpg . . . ',
+    success: 'Llave privada válida',
+    error: 'Ocurrió un error validando archivo .gpg',
+    invalidExtension: ['Llave no válida', 'Extensiones permitidas: .gpg'],
+    invalidPassphrase: 'Clave de acceso (Clave PGP 1) incorrecta, favor de revisar la contraseña',
+    invalidForDecrypt: ['La Llave privada (Clave PGP 1) es incompatible para la desencriptación'],
   },
   privateKey2: {
-    label: 'Llave privada GPG 2',
-    help: 'Seleccionar el archivo .gpg de su llave privada.',
-    running: 'Leyendo y desencriptando llave GPG ...',
-    success: 'Llave desencriptada correctamente.',
-    error: 'Ocurrió un error al desencriptar la llave, favor de validar la constraseña de la llave privada',
+    label: 'Llave privada (Clave PGP 2)',
+    help: 'Archivo con extensión .gpg',
+    running: 'Validando archivo .gpg . . . ',
+    success: 'Llave privada válida',
+    error: 'Ocurrió un error validando archivo .gpg',
+    invalidExtension: ['Llave no válida', 'Extensiones permitidas: .gpg'],
+    invalidPassphrase: 'Clave de acceso (Clave PGP 2) incorrecta, favor de revisar la contraseña',
+    invalidForDecrypt: ['La llave privada (Clave PGP 2) es incompatible para la desencriptación'],
   },
   modal: {
     buttonLauncher: 'Firmar Propuesta Nacional',
@@ -98,104 +126,129 @@ const _sp = {
 
 const _en = {
   fileToEncrypt: {
-    label: 'Archivo a encriptar',
-    help: 'Recuerde que las extensiones deben ser validas, ejemplo: PDF, DOCX, XLSX, etc...',
-    validateExtensions: 'Tipo de extensión inválida, extensiones no permitidas: ',
-    validateMaxSize: 'El archivo NombreDelArchivo.extensión supera el tamaño límite de ',
-    readRunning: 'Leyendo y convirtiendo archivo ... ',
-    valid: 'Archivo valido para encriptación.',
-    error: 'Ocurrió un error al leer el archivo a encriptar :: ',
-  },
-  inputFile: {
-    label: 'Archivo a encriptar',
-    help: 'Recuerde que las extensiones deben ser validas, ejemplo: PDF, DOCX, XLSX, etc...',
-    running: 'Leyendo y convirtiendo archivo ... ',
-    success: 'Archivo valido para encriptación.',
-    error: 'Ocurrió un error al leer el archivo a encriptar :: ',
-  },      
-  cert: {
-    label: 'Certificado FIEL',
-    help: 'Archivo con extensión .cert',
-    running: 'Leyendo, convirtiendo y validando certificado ... ',
-    success: 'Certificado valido.',
-    error: 'Ocurrió un error al leer el certificado.',
-  },
-  passPhrase: {
-    label: 'Contraseña para llave FIEL',
-    placeholder: 'Ingresar contraseña FIEL',
-    help: 'Debe capturar la contraseña para habilidar la selección del archivo de la llave.'
-  },
-  key : {
-    label: 'Llave FIEL',
-    help: 'Seleccionar el archivo .key proporcionado por SAT',
-    running: 'Leyendo y desencriptando llave FIEL ...',
-    success: 'Llave desencriptada correctamente.',
-    error: 'Ocurrió un error al desencriptar la llave, favor de validar la constraseña de la llave FIEL.',
-  },
-  buttonEncrypt: {
-    label: 'Encriptar',
-  },
-  encrypt: {
-    running: 'Encriptando archivo ... ',
-    success: 'Proceso de encriptación ejecutado correctamente.',
-    error: 'Ocurrió un error en el proceso de encriptación.'
-  },
-  sign: {
-    running: 'Firmando archivo ... ',
-    success: 'Proceso de firmado ejecutado correctamente.',
-    error: 'Ocurrió un errro en el proceso de firmado.'
-  },
-  process: {
-    label: 'Proceso:',
-    running: 'Ejecutando proceso ... ',
-    success: 'Se ejecuto correctamente el proceso.',
-    error: 'Se encontro un error durante el proceso.'
-  },
-  fileToDecrypt: {
-    label: 'Archivo a desencriptar',
-    help: 'Recuerde que las extensiones validas son: .CFE y .CFEI',
-    validateExtensions: 'Tipo de extensión inválida, extensiones no permitidas: ',
-    running: 'Leyendo y convirtiendo archivo ... ',
-    success: 'Archivo valido para desencriptar.',
-    error: 'Ocurrió un error al leer el archivo para desencriptar :: ',        
-  },
-  buttonDecrypt: {
-    label: 'Desencriptar'
-  },
-  passPhraseDecrypt: {
-    label: 'Contraseña para la llave privada',
-    placeholder: 'Ingrese contraseña para la llave privada',
-    help: 'Debe capturar la contraseña para habilidar la selección del archivo de la llave privada',
-  },
-  privateKey1: {
-    label: 'Llave privada GPG 1',
-    help: 'Seleccionar el archivo .gpg de su llave privada.',
-    running: 'Leyendo y desencriptando llave GPG ...',
-    success: 'Llave desencriptada correctamente.',
-    error: 'Ocurrió un error al desencriptar la llave, favor de validar la constraseña de la llave privada',        
-  },      
-  privateKey2: {
-    label: 'Llave privada GPG 2',
-    help: 'Seleccionar el archivo .gpg de su llave privada.',
-    running: 'Leyendo y desencriptando llave GPG ...',
-    success: 'Llave desencriptada correctamente.',
-    error: 'Ocurrió un error al desencriptar la llave, favor de validar la constraseña de la llave privada',        
-  },
-  modal: {
-  	buttonLauncher: 'Firmar propuestas nacionales',
-  	header : 'Firmar propuestas',
-  	buttonClose: 'Cerrar',
-  }     
+    label: 'File to sign and encrypt',
+    help: 'Extensions not allowed: pages, exe, xml, flv, mp3, mp4, avi and wma',
+    running: 'Validating file . . . ',
+    success: 'File valid for encryption',
+    error: 'An error occurred while reading the file to be encrypted ::',
+    invalidExtension: ['File {originalName} not allowed', 'Extensions not allowed: {blockedExtensions}'],
+    invalidSize: 'The file {originalName} exceeds the size limit of {sizeMax} MB'
+  },
+  cert: {
+    label: 'Digital certificate (File .cer de FIEL)',
+    help: 'File with extension .cer',
+    running: 'Validating .cer file . . . ',
+    success: 'Valid certificate',
+    error: 'An error occurred while validating the certificate',
+    invalidExtension: ['Invalid certificate', 'Allowed extensions: .cer'],
+    notValid: 'Certificate not valid',
+    invalidSession: 'Unable to validate certificate, the session has expired'
+  },
+  passPhrase: {
+    label: 'Password (FIELD Password)',
+    placeholder: '',
+    help: 'FIEL file access password',
+    success: 'Valid password',
+  },
+  key: {
+    label: 'Private key (FILE .key file)',
+    help: 'File with extension .key',
+    running: 'Validating .key file . . . "',
+    success: 'Valid key',
+    error: 'An error occurred when validating the key',
+    notCurrent: 'Key not valid',
+    invalidExtension: ['Invalid key', 'Allowed extensions: .key'],
+    notMatchKeyWithCert: 'Wrong key',
+    invalidPassphrase: 'Incorrect password, please check the FIELD password',
+  },
+  buttonEncrypt: {
+    label: 'Encrypt',
+  },
+  buttonSignEncrypt: {
+    label: 'Sign and Encrypt',
+  },
+  buttonProcess: {
+    labelEncrypt: 'Encrypting . . . ',
+    labelSignEncrypt: 'Signing and encrypting . . . ',
+    labelDecrypt: 'Decrypt . . . ',
+  },
+  encrypt: {
+    running: 'Encrypting file ...',
+    success: 'Encryption process executed correctly',
+    error: 'An error occurred in the encryption process'
+  },
+  sign: {
+    running: 'Signing file . . .',
+    success: 'Signed process executed correctly',
+    error: 'An error occurred in the signing process'
+  },
+  process: {
+    label: 'Process:',
+    running: 'Running process . . .',
+    success: 'The process was executed correctly',
+    error: 'An error was found during the process'
+  },
+  fileToDecrypt: {
+    label: 'File to decrypt',
+    help: 'Allowed extensions: CFE and CFEI',
+    validateExtensions: 'Invalid extension type, extensions not allowed:',
+    invalidExtension: ['File {originalName} not allowed', 'Allowed extensions: CFE and CFEI'],
+    running: 'Validating file . . . ',
+    success: 'File validated for decryption',
+    error: 'An error occurred while reading the file to decrypt',
+  },
+  buttonDecrypt: {
+    label: 'Decrypt'
+  },
+  passPhraseKey1: {
+    label: 'Password (PGP 1 key)',
+    placeholder: '',
+    help: 'PGP 1 file password',
+    success: 'Valid password',
+  },
+  passPhraseKey2: {
+    label: 'Password (PGP 2 key)',
+    placeholder: '',
+    help: 'PGP 2 file access password',
+    success: 'Valid password',
+  },
+  privateKey1: {
+    label: 'Private key (Key PGP 1)',
+    help: 'File with extension .gpg',
+    running: 'Validating .gpg file . . . ',
+    success: 'Valid private key',
+    error: 'An error occurred validating .gpg file',
+    invalidExtension: ['Invalid key', 'Allowed extensions: .gpg'],
+    invalidPassphrase: 'Incorrect password (Password PGP 1), please check the password',
+    invalidForDecrypt: ['The private key (PGP 1 key) is incompatible for decryption'],
+  },
+  privateKey2: {
+    label: 'Private key (PGP 2 key)',
+    help: 'File with extension .gpg',
+    running: 'Validating .gpg file . . . ',
+    success: 'Valid private key',
+    error: 'An error occurred validating .gpg file',
+    invalidExtension: ['Invalid key', 'Allowed extensions: .gpg'],
+    invalidPassphrase: 'Incorrect password (Password PGP 2), please check the password',
+    invalidForDecrypt: ['The private key (PGP 2 key) is incompatible for decryption'],
+  },
+  modal: {
+    buttonLauncher: 'Sign National Proposal',
+    header: 'Sign National Proposal',
+    buttonClose: 'Close',
+    footerMessage: 'For technical assistance, contact the telephone',
+    footerMessageNumber: '+ 52 (55) 5000 4200',
+  },
 };
 
 const options = {
 	publicKeys: {
-		key1 : 'http://localhost:8080/apps2012/vendors/sindejs/CFEpgp1.gpg',
+		key1 : 'http://localhost:8080/apps2012/vendors/sindejs/QApgp1.gpg',
 		key2 : 'http://localhost:8080/apps2012/vendors/sindejs/QApgp2.gpg'
 	},
-	language: _sp,
+	language: _en,
 	fiel: {
-		show: false,
+		show: true,
 		certificate: {
 			CA: [
 				'http://localhost:8080/apps2012/vendors/sindejs/AC0_SAT.cer',

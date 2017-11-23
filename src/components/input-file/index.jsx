@@ -7,10 +7,13 @@ import FormControl from 'react-bootstrap/lib/FormControl';
 import HelpBlock from 'react-bootstrap/lib/HelpBlock';
 import Utils from '../../sindejs/utils.js';
 import '../css/spinner.styl';
+import format from 'string-template';
 
 class InputFile extends React.Component {
 	constructor(props){
 		super(props);
+
+		this.dataFile;
 
 		this.state = {
 			theInputKey: props.reset,
@@ -37,6 +40,9 @@ class InputFile extends React.Component {
 		if (typeof this.props.valid === 'function'){
 			this.props.valid(value);
 		}
+
+		if (typeof this.props.afterProcess === 'function')
+			this.props.afterProcess(value);
 	}
 
 	resolveEvent(resolve){
@@ -76,13 +82,14 @@ class InputFile extends React.Component {
     if (this.props.accept != "*"){
 	    const _dataFile = Utils.getOriginalDataFromName(file.name);
   	  console.log('InputFile handleLoadFile _dataFile: ', _dataFile);
+  	  this.dataFile = _dataFile;
   	  console.log('InputFile handleLoadFile contains: ', this.props.accept.includes);
   	  const _ext = '.' + _dataFile.encryptExtension;
   	  console.log('InputFile handleLoadFile _ext: ', _ext);
   	  const validExtension = this.props.accept.split(',').map(ext => { return ext.trim() }).includes(_ext);
   	  console.log('InputFile handleLoadFile validExtension: ', validExtension);
   	  if (!validExtension){
-  	  	this.rejectEvent({ message: this.props.lng.invalidExtension });
+  	  	this.rejectEvent({ message: this.props.lng.invalidExtension.map(msg => { return format(msg, _dataFile) }) });
   	  	return;
   	  }
     }
@@ -126,7 +133,7 @@ class InputFile extends React.Component {
 
     const _control = (this.props.enabled)
     	? <FormControl key={ this.state.theInputKey || '' } type="file" accept={this.props.accept} onChange={ this.handleLoadFile.bind(this) } />
-    	: <FormControl disabled type="file" accept={this.props.accept} onChange={ this.handleLoadFile.bind(this) } />;
+    	: <FormControl disabled key={ this.state.theInputKey || '' } type="file" accept={this.props.accept} onChange={ this.handleLoadFile.bind(this) } />;
 
     const _help = (this.state.help.map !== undefined)
     	? <ul>{ this.state.help.map( (message, index) => { return <li key={"helpMessage"+index}>{message}</li> }) } </ul>
@@ -152,6 +159,7 @@ InputFile.defaultProps = {
 	accept: '*',
 	enabled: true,
 	beforeProcess: () => {},
+	afterProcess: () => {},
 	process: () => {},
 	valid: () => {},
 	reset: 'init',
@@ -162,6 +170,7 @@ InputFile.propType = {
 	lng : PropTypes.object.isRequired,
 	enabled: PropTypes.bool,
 	beforeProcess: PropTypes.func,
+	afterProcess: PropTypes.func,
 	process: PropTypes.func,
 	valid: PropTypes.func,
 	reset: PropTypes.string,

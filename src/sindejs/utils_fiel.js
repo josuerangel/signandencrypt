@@ -155,15 +155,21 @@ export default class UtilsFIEL {
           console.log('readKeyFIELToPEM prvkey hex: ', prvkeyhex);
 
           if (pubkeyhex !== prvkeyhex){
-            reject(Error('Key file does not match with X509 cetrificate'));
+            console.log('Key file does not match with X509 cetrificate');
+            reject(Error('notMatchKeyWithCert'));
             return;
           }
 
           const prvkeyPem = jsrsasign.KEYUTIL.getPEM(prvkey, "PKCS8PRV");
           resolve(prvkeyPem);
         }
-        catch(e){
-          reject(Error('error to decrypt key - ' + e));
+        catch(error){
+          console.log('error to decrypt key - ' + error);
+          let codeError = error;
+          if (error.startsWith('malformed plain PKCS8 private key'))
+            codeError = 'invalidPassphrase';
+
+          reject(Error(codeError));
         }
       };
       reader.readAsArrayBuffer(file);

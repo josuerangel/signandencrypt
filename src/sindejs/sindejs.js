@@ -348,6 +348,7 @@ export default class sindejs {
    * @return {String}             Message decrypted
    */
   static decrypt(message, format, publicKeys, privateKeys){
+    console.log('sindejs decrypt init');
     return new Promise((resolve, reject) => {
       let messageForDecrypt;
       let options = {
@@ -358,6 +359,7 @@ export default class sindejs {
       };
 
       try{
+        console.log('sindejs decrypt before first decrypt');
         openpgp.decrypt(options).then((plaintext) => {
           messageForDecrypt = plaintext;
           console.log('after fisrt decrypt plaintext: ', plaintext);
@@ -383,11 +385,18 @@ export default class sindejs {
             console.log('binary to blob: ', plaintext.data);
             console.log('binary buffer to blob: ', plaintext.data.buffer);
             resolve(plaintext);
+          }, (error) => {
+            console.log('error first key invalid for decrypt:', error);
+            reject(Error('firstKeyInvalidForDecrypt'));            
           });
+        }, (error) => { 
+          console.log('error second key invalid for decrypt:', error);
+          reject(Error('secondKeyInvalidForDecrypt'));
         }); 
       }
-      catch(e){
-        reject(Error('Error in decrypt: ' + e.message));
+      catch(error){
+        console.log('sindejs decrypt error: ', error);
+        reject(Error('decryptError'));
       }  
     });
   }

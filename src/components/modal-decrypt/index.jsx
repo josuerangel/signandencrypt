@@ -27,8 +27,8 @@ export class ModalEncrypt extends Component {
 			<div>
 				<Button bsStyle="primary" onClick={this.open.bind(this)} >{ this.props.options.language.modal.buttonLauncher }</Button>
 				<Modal show={this.state.showModal} onHide={this.close.bind(this)}>
-          <Modal.Header closeButton>
-            <Modal.Title>{this.props.options.language.modal.header}</Modal.Title>
+          <Modal.Header className="box-encrypt-header" closeButton>
+            <Modal.Title className="box-encrypt-header-text">{this.props.options.language.modal.header}</Modal.Title>
           </Modal.Header>
           <Modal.Body>
           	<BoxDecrypt
@@ -37,9 +37,6 @@ export class ModalEncrypt extends Component {
 							language={this.props.options.language}
 						/>
           </Modal.Body>
-          <Modal.Footer>
-            <Button onClick={this.close.bind(this)}>{this.props.options.language.modal.buttonClose}</Button>
-          </Modal.Footer>
         </Modal>				
 			</div>
 		);
