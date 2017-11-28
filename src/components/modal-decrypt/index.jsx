@@ -5,6 +5,7 @@ import Popover from 'react-bootstrap/lib/Popover';
 import Tooltip from 'react-bootstrap/lib/Tooltip';
 import OverlayTrigger from 'react-bootstrap/lib/OverlayTrigger';
 import BoxDecrypt from '../box-decrypt/index.jsx';
+import '../css/style.styl';
 
 export class ModalEncrypt extends Component {
   constructor(props){
@@ -34,6 +35,8 @@ export class ModalEncrypt extends Component {
           	<BoxDecrypt
 							publicKey1={this.props.options.publicKeys.key1}
 							publicKey2={this.props.options.publicKeys.key2}
+              publicKeysURL={this.props.options.publicKeys.urlGetNames}
+              publicKeysURLBase={this.props.options.publicKeys.urlCompleteNames}
 							language={this.props.options.language}
 						/>
           </Modal.Body>

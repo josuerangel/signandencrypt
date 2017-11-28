@@ -8,6 +8,12 @@ import ModalDecrypt from './components/modal-decrypt/index.jsx';
 // import EncryptButtons from './components/encrypt-buttons/index.jsx';
 
 const _sp = {
+  language: 'sp',
+  publicKey: {
+    running: 'Cargando llaves publicas . . .  ',
+    success: 'Llaves publicas cargadas correctamente',
+    error: 'Ocurrió un error al cargar las llaves públicas',
+  }, 
   fileToEncrypt: {
     label: 'Archivo a firmar y encriptar',
     help: 'Extensiones no permitidas: pages, exe, xml, flv, mp3, mp4, avi y wma',
@@ -32,6 +38,7 @@ const _sp = {
     placeholder: '',
     help: 'Clave de acceso del archivo FIEL',
     success: 'Contraseña válida',
+    error: 'Contraseña incorrecta',
   },
   key : {
     label: 'Llave privada (Archivo .key de FIEL)',
@@ -88,12 +95,14 @@ const _sp = {
     placeholder: '',
     help: 'Clave de acceso del archivo PGP 1',
     success: 'Contraseña válida',
+    error: 'Contraseña incorrecta',
   },  
   passPhraseKey2: {
     label: 'Clave de acceso (Clave PGP 2)',
     placeholder: '',
     help: 'Clave de acceso del archivo PGP 2',
     success: 'Contraseña válida',
+    error: 'Contraseña incorrecta',
   },  
   privateKey1: {
     label: 'Llave privada (Clave PGP 1)',
@@ -117,7 +126,7 @@ const _sp = {
   },
   modal: {
     buttonLauncher: 'Firmar Propuesta Nacional',
-    header : 'Firmar Propuest Nacional',
+    header : 'Firmar Porpuesta Nacional',
     buttonClose: 'Cerrar',
     footerMessage: 'Para obtener asistencia técnica comuniquese al télefono',
     footerMessageNumber: '+ 52 (55) 5000 4200',
@@ -125,126 +134,137 @@ const _sp = {
 };
 
 const _en = {
+  language: 'en',
+  publicKey: {
+    running: 'Loading public keys. . . ',
+    success: 'Public keys loaded correctly',
+    error: 'An error occurred while loading the public keys',
+  },
   fileToEncrypt: {
-    label: 'File to sign and encrypt',
-    help: 'Extensions not allowed: pages, exe, xml, flv, mp3, mp4, avi and wma',
-    running: 'Validating file . . . ',
-    success: 'File valid for encryption',
-    error: 'An error occurred while reading the file to be encrypted ::',
-    invalidExtension: ['File {originalName} not allowed', 'Extensions not allowed: {blockedExtensions}'],
-    invalidSize: 'The file {originalName} exceeds the size limit of {sizeMax} MB'
-  },
-  cert: {
-    label: 'Digital certificate (File .cer de FIEL)',
-    help: 'File with extension .cer',
-    running: 'Validating .cer file . . . ',
-    success: 'Valid certificate',
-    error: 'An error occurred while validating the certificate',
-    invalidExtension: ['Invalid certificate', 'Allowed extensions: .cer'],
-    notValid: 'Certificate not valid',
-    invalidSession: 'Unable to validate certificate, the session has expired'
-  },
-  passPhrase: {
-    label: 'Password (FIELD Password)',
-    placeholder: '',
-    help: 'FIEL file access password',
-    success: 'Valid password',
-  },
-  key: {
-    label: 'Private key (FILE .key file)',
-    help: 'File with extension .key',
-    running: 'Validating .key file . . . "',
-    success: 'Valid key',
-    error: 'An error occurred when validating the key',
-    notCurrent: 'Key not valid',
-    invalidExtension: ['Invalid key', 'Allowed extensions: .key'],
-    notMatchKeyWithCert: 'Wrong key',
-    invalidPassphrase: 'Incorrect password, please check the FIELD password',
-  },
-  buttonEncrypt: {
-    label: 'Encrypt',
-  },
-  buttonSignEncrypt: {
-    label: 'Sign and Encrypt',
-  },
-  buttonProcess: {
-    labelEncrypt: 'Encrypting . . . ',
-    labelSignEncrypt: 'Signing and encrypting . . . ',
-    labelDecrypt: 'Decrypt . . . ',
-  },
-  encrypt: {
-    running: 'Encrypting file ...',
-    success: 'Encryption process executed correctly',
-    error: 'An error occurred in the encryption process'
-  },
-  sign: {
-    running: 'Signing file . . .',
-    success: 'Signed process executed correctly',
-    error: 'An error occurred in the signing process'
-  },
-  process: {
-    label: 'Process:',
-    running: 'Running process . . .',
-    success: 'The process was executed correctly',
-    error: 'An error was found during the process'
-  },
-  fileToDecrypt: {
-    label: 'File to decrypt',
-    help: 'Allowed extensions: CFE and CFEI',
-    validateExtensions: 'Invalid extension type, extensions not allowed:',
-    invalidExtension: ['File {originalName} not allowed', 'Allowed extensions: CFE and CFEI'],
-    running: 'Validating file . . . ',
-    success: 'File validated for decryption',
-    error: 'An error occurred while reading the file to decrypt',
-  },
-  buttonDecrypt: {
-    label: 'Decrypt'
-  },
-  passPhraseKey1: {
-    label: 'Password (PGP 1 key)',
-    placeholder: '',
-    help: 'PGP 1 file password',
-    success: 'Valid password',
-  },
-  passPhraseKey2: {
-    label: 'Password (PGP 2 key)',
-    placeholder: '',
-    help: 'PGP 2 file access password',
-    success: 'Valid password',
-  },
-  privateKey1: {
-    label: 'Private key (Key PGP 1)',
-    help: 'File with extension .gpg',
-    running: 'Validating .gpg file . . . ',
-    success: 'Valid private key',
-    error: 'An error occurred validating .gpg file',
-    invalidExtension: ['Invalid key', 'Allowed extensions: .gpg'],
-    invalidPassphrase: 'Incorrect password (Password PGP 1), please check the password',
-    invalidForDecrypt: ['The private key (PGP 1 key) is incompatible for decryption'],
-  },
-  privateKey2: {
-    label: 'Private key (PGP 2 key)',
-    help: 'File with extension .gpg',
-    running: 'Validating .gpg file . . . ',
-    success: 'Valid private key',
-    error: 'An error occurred validating .gpg file',
-    invalidExtension: ['Invalid key', 'Allowed extensions: .gpg'],
-    invalidPassphrase: 'Incorrect password (Password PGP 2), please check the password',
-    invalidForDecrypt: ['The private key (PGP 2 key) is incompatible for decryption'],
-  },
-  modal: {
-    buttonLauncher: 'Sign National Proposal',
-    header: 'Sign National Proposal',
-    buttonClose: 'Close',
-    footerMessage: 'For technical assistance, contact the telephone',
-    footerMessageNumber: '+ 52 (55) 5000 4200',
-  },
+    label: 'File to sign and encrypt',
+    help: 'Extensions not allowed: pages, exe, xml, flv, mp3, mp4, avi and wma',
+    running: 'Validating file . . . ',
+    success: 'File valid for encryption',
+    error: 'An error occurred while reading the file to be encrypted ::',
+    labelinvalidExtension: ['File {originalName} not allowed', 'Extensions not allowed: {blockedExtensions}'],
+    invalidSize: 'The file {originalName} exceeds the size limit of {sizeMax} MB'
+  },
+  cert: {
+    label: 'Digital certificate (FIEL .cer file)',
+    help: 'File with extension .cer',
+    running: 'Validating .cer file . . . ',
+    success: 'Valid certificate',
+    error: 'An error occurred while validating the certificate',
+    invalidExtension: ['Invalid certificate', 'Allowed extensions: .cer'],
+    notValid: 'Certificate not valid',
+    invalidSession: 'Unable to validate certificate, the session has expired'
+    },
+  passPhrase: {
+    label: 'Password (FIEL Password)',
+    placeholder: '',
+    help: 'FIEL file access password',
+    success: 'Valid password',
+    error: 'Incorrect password',
+  },
+  key: {
+    label: 'Private key (FILE .key file)',
+    help: 'File with extension .key',
+    running: 'Validating .key file . . . "',
+    success: 'Valid key',
+    error: 'An error occurred when validating the key',
+    notCurrent: 'Key not valid',
+    invalidExtension: ['Invalid key', 'Allowed extensions: .key'],
+    notMatchKeyWithCert: 'Wrong key',
+    invalidPassphrase: 'Incorrect password, please check the FIEL password',
+  },
+  buttonEncrypt: {
+    label: 'Encrypt',
+  },
+  buttonSignEncrypt: {
+    label: 'Sign and Encrypt',
+  },
+  buttonProcess: {
+    labelEncrypt: 'Encrypting . . . ',
+    labelSignEncrypt: 'Signing and encrypting . . . ',
+    labelDecrypt: 'Decrypt . . . ',
+  },
+  encrypt: {
+    running: 'Encrypting file ...',
+    success: 'Encryption process executed correctly',
+    error: 'An error occurred in the encryption process'
+  },
+  sign: {
+    running: 'Signing file . . .',
+    success: 'Signed process executed correctly',
+    error: 'An error occurred in the signing process'
+  },
+  process: {
+    label: 'Process:',
+    running: 'Running process . . .',
+    success: 'The process was executed correctly',
+    error: 'An error was found during the process'
+  },
+  fileToDecrypt: {
+    label: 'File to decrypt',
+    help: 'Allowed extensions: CFE and CFEI',
+    validateExtensions: 'Invalid extension type, extensions not allowed:',
+    invalidExtension: ['File {originalName} not allowed', 'Allowed extensions: CFE and CFEI'],
+    running: 'Validating file . . . ',
+    success: 'File validated for decryption',
+    error: 'An error occurred while reading the file to decrypt',
+  },
+  buttonDecrypt: {
+    label: 'Decrypt'
+  },
+  passPhraseKey1: {
+    label: 'Password (PGP 1 key)',
+    placeholder: '',
+    help: 'PGP 1 file password',
+    success: 'Valid password',
+    error: 'Invalid password',
+  },
+  passPhraseKey2: {
+    label: 'Password (PGP 2 key)',
+    placeholder: '',
+    help: 'PGP 2 file access password',
+    success: 'Valid password',
+    error: 'Invalid password',
+  },
+  privateKey1: {
+    label: 'Private key (Key PGP 1)',
+    help: 'File with extension .gpg',
+    running: 'Validating .gpg file . . . ',
+    success: 'Valid private key',
+    error: 'An error occurred validating .gpg file',
+    invalidExtension: ['Invalid key', 'Allowed extensions: .gpg'],
+    invalidPassphrase: 'Incorrect password (Password PGP 1), please check the password',
+    invalidForDecrypt: ['The private key (PGP 1 key) is incompatible for decryption'],
+  },
+  privateKey2: {
+    label: 'Private key (PGP 2 key)',
+    help: 'File with extension .gpg',
+    running: 'Validating .gpg file . . . ',
+    success: 'Valid private key',
+    error: 'An error occurred validating .gpg file',
+    invalidExtension: ['Invalid key', 'Allowed extensions: .gpg'],
+    invalidPassphrase: 'Incorrect password (Password PGP 2), please check the password',
+    invalidForDecrypt: ['The private key (PGP 2 key) is incompatible for decryption'],
+  },
+  modal: {
+    buttonLauncher: 'Sign National Proposal',
+    header: 'Sign National Proposal',
+    buttonClose: 'Close',
+    footerMessage: 'For technical assistance, contact the telephone',
+    footerMessageNumber: '+ 52 (55) 5000 4200',
+  },
 };
 
 const options = {
 	publicKeys: {
 		key1 : 'http://localhost:8080/apps2012/vendors/sindejs/QApgp1.gpg',
-		key2 : 'http://localhost:8080/apps2012/vendors/sindejs/QApgp2.gpg'
+		key2 : 'http://localhost:8080/apps2012/vendors/sindejs/QApgp2.gpg',
+    urlGetNames: 'http://localhost:8080/apps2012/filter/SvtFIEL?option=getPublicKeysNames',
+    urlCompleteNames: 'http://localhost:8080/apps2012/vendors/sindejs/'
 	},
 	language: _en,
 	fiel: {
@@ -262,6 +282,7 @@ const options = {
 	},
 	blockedExtensions: ['pages','exe','xml','flv','mp3','mp4','avi','wma', 'mov'],
 	maxSize: 40,
+  validateSessionUrl: 'http://localhost:8080/apps2012/filter/SvtFIEL?option=validateSession',
 };
 
 // ReactDOM.render(<EncryptButtons options={options} />, document.getElementById('modalEncrypt'));

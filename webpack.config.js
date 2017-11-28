@@ -3,7 +3,7 @@ var Visualizer = require('webpack-visualizer-plugin');
 
 module.exports = {
   entry: {
-    "bundle": [__dirname + '/src'],
+    "bundle": ['babel-polyfill', __dirname + '/src'],
   },
   output: {
     filename: '[name].js',

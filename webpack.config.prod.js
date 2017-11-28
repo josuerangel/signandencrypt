@@ -8,8 +8,8 @@ module.exports = {
     // "app.min": [__dirname + '/src'],
     // "boxencrypt-standalone.min": [__dirname + '/src/components/wrapper/standalone-box-encrypt.js'],
     // "boxdecrypt-standalone.min": [__dirname + '/src/components/wrapper/standalone-box-decrypt.js'],
-    "modalencrypt-standalone.min": [__dirname + '/src/components/wrapper/standalone-modal-encrypt.js'],
-    "modaldecrypt-standalone.min": [__dirname + '/src/components/wrapper/standalone-modal-decrypt.js'],
+    "modalencrypt-standalone.min": ['babel-polyfill', __dirname + '/src/components/wrapper/standalone-modal-encrypt.js'],
+    "modaldecrypt-standalone.min": ['babel-polyfill', __dirname + '/src/components/wrapper/standalone-modal-decrypt.js'],
   },
   output: {
     path: path.resolve(__dirname, 'bundles'),

@@ -8,6 +8,7 @@ import RSAPublicKey from '../../node_modules/pkijs/build/RSAPublicKey.js';
 import ContentInfo from '../../node_modules/pkijs/build/ContentInfo.js';
 import EncapsulatedContentInfo from '../../node_modules/pkijs/build/EncapsulatedContentInfo.js';
 import SignedData from '../../node_modules/pkijs/build/SignedData.js';
+import {fetchCheckText, jsonParse} from './utils.js';
 
 export default class sindejs {
   constructor(parameters = {}) {
@@ -17,6 +18,7 @@ export default class sindejs {
        */
       this.fetchInit = {
           method: 'GET',
+          credentials: 'same-origin',
           headers: new Headers(),
           mode: 'cors',
           cache: 'default'
@@ -400,6 +402,56 @@ export default class sindejs {
       }  
     });
   }
+
+  static getPublicKeys(urlToGetNames, urlForComplete){
+    console.log('sindejs getPublicKeys: ', urlToGetNames, urlForComplete);
+    return new Promise((resolve, reject) => {
+      fetch(urlToGetNames, {
+          method: 'GET',
+          credentials: 'same-origin',
+        }).then(fetchCheckText).then(jsonParse).then((data) => {
+        console.log('loadPublicKey fetch data: ', data);
+        const response = data;
+        if (response.ResponseError !== undefined){
+          reject(Error(response.ResponseError[0].ErrorMessage));
+          return;
+        }
+
+        const urlKey1 = urlForComplete + response.ResponseData[0].key1;
+        console.log('sindejs getPublicKeys urlKey1: ', urlKey1);
+        const _loadPublicKey1 = sindejs.loadPublicKey(urlKey1);
+        _loadPublicKey1.then(
+          (key) => { 
+            // this.publicKeys.key1 = key; 
+            console.log('_loadKey1'); 
+            console.log(key); },
+          (error) => { console.log(error) }
+        );
+
+        const urlKey2 = urlForComplete + response.ResponseData[0].key2;
+        const _loadPublicKey2 = sindejs.loadPublicKey(urlKey2);
+        _loadPublicKey2.then(
+          (key) => { 
+            // this.publicKeys.key2 = key; 
+            console.log('_loadKey2'); 
+            console.log(key); },
+          (error) => { console.log(error) }
+        );
+
+        Promise.all([_loadPublicKey1, _loadPublicKey2]).then(
+          values => {
+            // console.log('openpgp: ', openpgp);
+            console.log('sindejs getPublicKeys promise.all values: ', values);
+            resolve(values);
+          },
+          reason => {
+            console.log('sindejs getPublicKeys promise.all reason: ', reason);
+            reject(Error(reason.message));
+          }
+        );
+      });
+    });
+  }
     
   /**
    * Load PGP key from url, convert to object key for pgp encrypt
@@ -432,8 +484,11 @@ export default class sindejs {
             reader = new FileReader();
             reader.onload = event => {
               const keyBinary = event.target.result;
+              console.log('loadPublicKey read binary: ', keyBinary);
               keyPEM = Utils._arrayBufferToPublicKeyPEM(keyBinary);
+              console.log('loadPublicKey keyPEM: ', keyPEM);
               let key = Utils.getPublicKey(keyPEM);
+              console.log('loadPublicKey key: ', key);
               if (key == false)
                 reject(Error('dontReadPublicKey'));
               else

@@ -7,6 +7,7 @@ import * as FileSaver from 'file-saver';
 import pdfMake from "pdfmake/build/pdfmake";
 import pdfFonts from "pdfmake/build/vfs_fonts";
 pdfMake.vfs = pdfFonts.pdfMake.vfs;
+import ReactHtmlParser, { processNodes, convertNodeToElement, htmlparser2 } from 'react-html-parser';
 
 import FormGroup from 'react-bootstrap/lib/FormGroup';
 import ControlLabel from 'react-bootstrap/lib/ControlLabel';
@@ -45,28 +46,41 @@ class BoxDecrypt extends React.Component{
 			selectedKey1: false,
 			selectedKey2: false,
 			passPhraseKey1: '',
+			passPhraseKeyCorrect1: true,
 			passPhraseKey2: '',
+			passPhraseKeyCorrect2: true,
 			processMessages: [],
 			processRunning: false,
 			processState: null,
 			showProcessMessages: false,
 			resetInputs: '',
+      loadingPublicKeys: false,
+      loadingPublicKeysState: 'info',
+      loadingPublicKeysMessage: '',			
 		}
 	}
 
   componentDidMount(){
-    const _loadPublicKey1 = sindejs.loadPublicKey(this.props.publicKey1);
-    _loadPublicKey1.then(
-      (key) => { this.publicKeys.key1 = key; console.log('_loadKey1'); console.log(this.publicKeys.key1); }, 
-      (error) => { console.log(error) }
-    );
-
-    const _loadPublicKey2 = sindejs.loadPublicKey(this.props.publicKey2);
-    _loadPublicKey2.then(
-      (key) => { this.publicKeys.key2 = key; console.log('_loadKey2'); console.log(this.publicKeys.key2); }, 
-      (error) => { console.log(error) }
-    );       
+    this.loadPublicKeys();
   }
+
+  loadPublicKeys(){
+    const _loadkeys = sindejs.getPublicKeys(this.props.publicKeysURL, this.props.publicKeysURLBase);
+    _loadkeys.then(
+      (keys) => {
+        console.log('componentDidMount _loadkeys keys: ', keys);
+        this.publicKeys.key1 = keys[0];
+        this.publicKeys.key2 = keys[1];
+      },
+      (error) => {
+        console.log('componentDidMount _loadkeys error: ', error);
+        const _errormessage = (error.message === 'dontReadPublicKey')
+          ? this.lng.publicKey.error
+          : error.message;
+        this.setState({ processRunning: true, loadingPublicKeys: true, loadingPublicKeysState: 'danger', loadingPublicKeysMessage: _errormessage });        
+      }
+    );    
+  }  
 
   makeFiles(dataB64, certificate){
   	console.log(typeof dataB64);
@@ -87,7 +101,7 @@ class BoxDecrypt extends React.Component{
 	    MD5: Utils.getMD5(dataB64),
 	    size: blobfile.size
 	  }
-	  pdfMake.createPdf(sindejs.getPdfDefinition(this.publicKeys, dataFilesPDF, this.props.language, 'decrypt')).download(nameFile + '.acuseDesencriptacion.pdf');
+	  pdfMake.createPdf(sindejs.getPdfDefinition(this.publicKeys, dataFilesPDF, this.lng.language, 'decrypt')).download(nameFile + '.acuseDesencriptacion.pdf');
 		FileSaver.saveAs(blobfile, this.dataFileForDecrypt.originalName);
 		this.setState({ 
 			processRunning: false, 
@@ -186,6 +200,7 @@ class BoxDecrypt extends React.Component{
 					switch(error.message){
 						case 'dontReadPrivateKey':
 							_msg = this.lng.privateKey1.invalidPassphrase;
+							this.setState({ passPhraseKeyCorrect1: false });
 							break;
 						default:
 							_msg = this.lng.privateKey1.error;
@@ -211,6 +226,7 @@ class BoxDecrypt extends React.Component{
 					switch(error.message){
 						case 'dontReadPrivateKey':
 							_msg = this.lng.privateKey2.invalidPassphrase;
+							this.setState({ passPhraseKeyCorrect2: false });
 							break;
 						default:
 							_msg = this.lng.privateKey2.error;
@@ -226,13 +242,14 @@ class BoxDecrypt extends React.Component{
         <Loader color="#F7FDFA" size="32px" margin="4px"/>
       </div>;
 
-    const _buttonDecrypting = 
-      <Button bsStyle="primary" disabled>
-        <div className="box-encrypt-text-encripting">
-          { this.lng.buttonProcess.labelDecrypt }
-        </div>
-        {_spinnerButton}
-      </Button>;
+    const _buttonDecrypting = (this.state.loadingPublicKeysState !== 'danger')
+      ? <Button bsStyle="primary" disabled>
+        	<div className="box-encrypt-text-encripting">
+          	{ this.lng.buttonProcess.labelDecrypt }
+        	</div>
+        	{_spinnerButton}
+      	</Button>
+      : null;
 
     const _buttonDecrypt = (this.state.selectedFile && this.state.selectedKey1 && this.state.selectedKey2) 
       ? <Button bsStyle="primary" onClick={this.handleDecrypt.bind(this)}>{this.lng.buttonDecrypt.label}</Button>
@@ -240,29 +257,41 @@ class BoxDecrypt extends React.Component{
 
    	const _finalButton = (this.state.processRunning) ? _buttonDecrypting : _buttonDecrypt;
 
+    const _passPhraseKeyState1 = (!this.state.passPhraseKeyCorrect1)
+      ? 'error'
+      : (this.state.passPhraseKey1.length > 0)
+        ? 'success'
+        : null;
+
+    const _passPhraseKeyMessage1 = (_passPhraseKeyState1 === 'success')
+      ? this.lng.passPhraseKey1.success
+      : (_passPhraseKeyState1 === 'error')
+        ? this.lng.passPhraseKey1.error
+        : this.lng.passPhraseKey1.help;
+
 		const _passPhraseKey1 = (!this.state.processRunning)
-			? <FormGroup validationState={(this.state.passPhraseKey1.length) ? 'success' : null } >
+			? <FormGroup validationState={ _passPhraseKeyState1 } >
           <ControlLabel>{this.lng.passPhraseKey1.label}</ControlLabel>
           <FormControl
             type="text"
             value={this.state.passPhraseKey1}
             placeholder={this.lng.passPhraseKey1.placeholder}
-            onChange={ event => { this.setState({ passPhraseKey1: event.target.value.trim() }) }}
+            onChange={ event => { this.setState({ passPhraseKey1: event.target.value.trim(), passPhraseKeyCorrect1: true }) }}
           />
           <FormControl.Feedback />
-          <HelpBlock>{(this.state.passPhraseKey1.length > 0) ? this.lng.passPhraseKey1.success : this.lng.passPhraseKey1.help}</HelpBlock>
+          <HelpBlock className="helpMessage">{ _passPhraseKeyMessage1 }</HelpBlock>
         </FormGroup>
-      : <FormGroup validationState={(this.state.passPhraseKey1.length) ? 'success' : null } >
+      : <FormGroup validationState={ _passPhraseKeyState1 } >
           <ControlLabel>{this.lng.passPhraseKey1.label}</ControlLabel>
           <FormControl
           	disabled
             type="text"
             value={this.state.passPhraseKey1}
             placeholder={this.lng.passPhraseKey1.placeholder}
-            onChange={ event => { this.setState({ passPhraseKey1: event.target.value.trim() }) }}
+            onChange={ event => { this.setState({ passPhraseKey1: event.target.value.trim(), passPhraseKeyCorrect1: true }) }}
           />
           <FormControl.Feedback />
-          <HelpBlock>{(this.state.passPhraseKey1.length > 0) ? this.lng.passPhraseKey1.success : this.lng.passPhraseKey1.help}</HelpBlock>          
+          <HelpBlock className="helpMessage">{ _passPhraseKeyMessage1 }</HelpBlock>          
         </FormGroup>;
 
     const _inputKey1 = <InputFile accept=".gpg" lng={this.lng.privateKey1} 
@@ -270,29 +299,41 @@ class BoxDecrypt extends React.Component{
     	reset={this.state.passPhraseKey1} 
     	process={this.loadPrivateKey1.bind(this)} valid={ (state) => { this.setState({ selectedKey1 : state }) }} />
 
+    const _passPhraseKeyState2 = (!this.state.passPhraseKeyCorrect2)
+      ? 'error'
+      : (this.state.passPhraseKey2.length > 0)
+        ? 'success'
+        : null;
+
+    const _passPhraseKeyMessage2 = (_passPhraseKeyState2 === 'success')
+      ? this.lng.passPhraseKey2.success
+      : (_passPhraseKeyState2 === 'error')
+        ? this.lng.passPhraseKey2.error
+        : this.lng.passPhraseKey2.help;
+
 		const _passPhraseKey2 = (!this.state.processRunning)
-			? <FormGroup validationState={(this.state.passPhraseKey2.length) ? 'success' : null } >
+			? <FormGroup validationState={ _passPhraseKeyState2 } >
           <ControlLabel>{this.lng.passPhraseKey2.label}</ControlLabel>
           <FormControl
             type="text"
             value={this.state.passPhraseKey2}
             placeholder={this.lng.passPhraseKey2.placeholder}
-            onChange={ event => { this.setState({ passPhraseKey2: event.target.value.trim() }) }}
+            onChange={ event => { this.setState({ passPhraseKey2: event.target.value.trim(), passPhraseKeyCorrect2: true }) }}
           />
           <FormControl.Feedback />
-          <HelpBlock>{(this.state.passPhraseKey2.length > 0) ? this.lng.passPhraseKey2.success : this.lng.passPhraseKey2.help}</HelpBlock>          
+          <HelpBlock className="helpMessage">{ _passPhraseKeyMessage2 }</HelpBlock>          
         </FormGroup>
-      : <FormGroup validationState={(this.state.passPhraseKey2.length) ? 'success' : null } >
+      : <FormGroup validationState={ _passPhraseKeyState2 } >
           <ControlLabel>{this.lng.passPhraseKey2.label}</ControlLabel>
           <FormControl
           	disabled
             type="text"
             value={this.state.passPhraseKey2}
             placeholder={this.lng.passPhraseKey2.placeholder}
-            onChange={ event => { this.setState({ passPhraseKey2: event.target.value.trim() }) }}
+            onChange={ event => { this.setState({ passPhraseKey2: event.target.value.trim(), passPhraseKeyCorrect2: true }) }}
           />
           <FormControl.Feedback />
-          <HelpBlock>{(this.state.passPhraseKey2.length > 0) ? this.lng.passPhraseKey2.success : this.lng.passPhraseKey2.help}</HelpBlock>          
+          <HelpBlock className="helpMessage">{ _passPhraseKeyMessage2 }</HelpBlock>          
         </FormGroup>;
 
     const _inputKey2 = <InputFile accept=".gpg" lng={this.lng.privateKey2} reset={this.state.passPhraseKey2} 
@@ -302,6 +343,22 @@ class BoxDecrypt extends React.Component{
     const _processMessages = this.state.processMessages.map((message, index) => {
       return <li key={"pmKey" + index }>{message}</li>;
     });
+
+    const _spinner = 
+      <div className="spinnerContainer">
+        <Loader color="#428BCA" size="32px" margin="4px"/>
+      </div>;
+
+    const _publicKeys = (this.state.loadingPublicKeys && this.state.loadingPublicKeysState == 'info')
+      ? <li>
+          <div className="box-encrypt-text-loading-public-keys">{this.state.loadingPublicKeysMessage}</div>
+          <div className="box-encrypt-spinner-loading-public-keys">
+          {_spinner}
+          </div>
+        </li>
+      : <li>
+          {this.state.loadingPublicKeysMessage}
+        </li>;
 
 		return (
 			<form>
@@ -324,7 +381,14 @@ class BoxDecrypt extends React.Component{
               <Alert bsStyle={this.state.processState}>
                 <ul>{_processMessages}</ul>
               </Alert>
-            </Collapse>                        
+            </Collapse>
+            <Collapse in={this.state.loadingPublicKeys}>
+              <Alert bsStyle={this.state.loadingPublicKeysState}>
+                <ul>
+                  {_publicKeys}
+                </ul>
+              </Alert>
+            </Collapse>                                         
             <p className="box-encrypt-footer-message">{this.lng.modal.footerMessage}
               <strong className="box-encrypt-footer-message-number">
                 {this.lng.modal.footerMessageNumber}

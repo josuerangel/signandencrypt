@@ -43,9 +43,12 @@ export class ModalEncrypt extends Component {
               OSCPUrl={options.fiel.certificate.OSCPUrl}
 							publicKey1={options.publicKeys.key1}
 							publicKey2={options.publicKeys.key2}
+              publicKeysURL={options.publicKeys.urlGetNames}
+              publicKeysURLBase={options.publicKeys.urlCompleteNames}
 							blockedExtensions={options.blockedExtensions}
 							language={options.language}
 							maxSize={options.maxSize}
+              validateSessionUrl={options.validateSessionUrl}
 						/>
           </Modal.Body>
         </Modal>				

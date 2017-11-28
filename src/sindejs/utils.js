@@ -13,6 +13,10 @@ export function fetchCheckText(response) {
     }
   };
 
+export function jsonParse(response){
+  return JSON.parse(response);
+}
+
 export default class Utils {
   constructor(parameters = {}){
     /**
@@ -145,7 +149,10 @@ export default class Utils {
    */
   static getPublicKey(keyPEM){
       const keyHeader = openpgp.key.readArmored(keyPEM);
+      console.log('utils getPublicKey keyHeader: ', keyHeader);
       const key = openpgp.key.readArmored(keyPEM).keys[0];
+      console.log('utls getPublicKey key: ', key);
+      if (key === undefined) return false;
       if (key.verifyPrimaryKey() != openpgp.enums.keyStatus.valid || key.length == 0)
         return false
       return key;
