@@ -320,6 +320,9 @@ class BoxEncrypt extends React.Component {
               case 'invalidSession':
                 rejectMessage = this.lng.cert.invalidSession;
                 break;
+              case 'invalidDates':
+                rejectMessage = this.lng.cert.invalidDates;
+                break;
               default:
                 rejectMessage = this.lng.cert.error;
             }

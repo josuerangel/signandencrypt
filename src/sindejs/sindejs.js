@@ -667,6 +667,41 @@ export default class sindejs {
         console.log('loaded certificate: ');
         console.log(data);
 
+        const certificate = new jsrsasign.X509();
+        console.log('readAndValidateCertificate certificate: ', certificate);
+        certificate.readCertPEM(data);
+        console.log('readAndValidateCertificate certificate after read: ', certificate);
+        const _notAfter = certificate.getNotAfter();
+        console.log('readAndValidateCertificate notAfter: ', _notAfter);
+        const _notBefore = certificate.getNotBefore();
+        console.log('readAndValidateCertificate notBefore: ', _notBefore);
+        // const _dateNotAfter = new Date({str: _notAfter});
+        // let o1 = new jsrsasign.KJUR.asn1.DERUTCTime();
+        // o1.setByDate(_dateNotAfter);
+        // console.log('o1: ', o1);
+        // console.log('o1 format: ', o1.formatDate());
+        
+        const _dateNotAfter = jsrsasign.zulutodate(_notAfter).toUTCString();
+        console.log('_dateNotAfter: ', _dateNotAfter);
+
+        const _dateNotBefore = jsrsasign.zulutodate(_notBefore).toUTCString();
+        console.log('_dateNotBefore: ', _dateNotBefore);
+        
+        console.log('readAndValidateCertificate _dateNotAfter: ', _dateNotAfter);
+        const _isAfter = moment().isAfter(_dateNotBefore);        
+        console.log('readAndValidateCertificate isAfter: ', _isAfter);
+
+        const _isBefore = moment().isBefore(_dateNotAfter);
+        console.log('readAndValidateCertificate isBefore: ', _isBefore);
+
+        const validateDates = (_isAfter && _isBefore)
+        console.log('validateDates: ', validateDates);
+
+        if (!validateDates) {
+          console.log('readAndValidateCertificate invalid dates');
+          reject(Error('invalidDates'));
+        }
+
         const validateCert = UtilsFIEL.validateCertificateOSCP(data, CA, OSCPUrl);
         validateCert.then(
           (valid) => {

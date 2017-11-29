@@ -31,7 +31,8 @@ const _sp = {
     error: 'Ocurrió un error al validar el certificado',
     invalidExtension: ['Certificado no válido', 'Extensiones permitidas: .cer'],
     notValid: 'Certificado no vigente',
-    invalidSession: 'Imposible validar certificado, la sesión ha expirado'
+    invalidSession: 'Imposible validar certificado, la sesión ha expirado',
+    invalidDates: 'Certificado no vigente',
   },
   passPhrase: {
     label: 'Clave de acceso (Contraseña FIEL)',
@@ -43,7 +44,7 @@ const _sp = {
   key : {
     label: 'Llave privada (Archivo .key de FIEL)',
     help: 'Archivo con extensión .key',
-    running: 'Validando archivo .key . . . ',
+    running: 'Validando archivo .key . . .',
     success: 'Llave válida',
     error: 'Ocurrió un error al validar la llave',
     notCurrent: 'Llave no vigente',
@@ -61,7 +62,7 @@ const _sp = {
     labelEncrypt: 'Encriptando . . .',
     labelSignEncrypt: 'Firmando y encriptando . . .',
     labelDecrypt: 'Desencriptando . . . ',
-  },  
+  },
   encrypt: {
     running: 'Encriptando archivo ... ',
     success: 'Proceso de encriptación ejecutado correctamente.',
@@ -126,7 +127,7 @@ const _sp = {
   },
   modal: {
     buttonLauncher: 'Firmar Propuesta Nacional',
-    header : 'Firmar Porpuesta Nacional',
+    header : 'Firmar Propuesta Nacional',
     buttonClose: 'Cerrar',
     footerMessage: 'Para obtener asistencia técnica comuniquese al télefono',
     footerMessageNumber: '+ 52 (55) 5000 4200',
@@ -146,7 +147,7 @@ const _en = {
     running: 'Validating file . . . ',
     success: 'File valid for encryption',
     error: 'An error occurred while reading the file to be encrypted ::',
-    labelinvalidExtension: ['File {originalName} not allowed', 'Extensions not allowed: {blockedExtensions}'],
+    invalidExtension: ['File {originalName} not allowed', 'Extensions not allowed: {blockedExtensions}'],
     invalidSize: 'The file {originalName} exceeds the size limit of {sizeMax} MB'
   },
   cert: {
@@ -157,7 +158,8 @@ const _en = {
     error: 'An error occurred while validating the certificate',
     invalidExtension: ['Invalid certificate', 'Allowed extensions: .cer'],
     notValid: 'Certificate not valid',
-    invalidSession: 'Unable to validate certificate, the session has expired'
+    invalidSession: 'Unable to validate certificate, the session has expired',
+    invalidDates: 'Certificate not valid',
     },
   passPhrase: {
     label: 'Password (FIEL Password)',
@@ -266,7 +268,7 @@ const options = {
     urlGetNames: 'http://localhost:8080/apps2012/filter/SvtFIEL?option=getPublicKeysNames',
     urlCompleteNames: 'http://localhost:8080/apps2012/vendors/sindejs/'
 	},
-	language: _en,
+	language: _sp,
 	fiel: {
 		show: true,
 		certificate: {
