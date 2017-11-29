@@ -123,7 +123,7 @@ export default class sindejs {
         console.log('parseFile init');
         console.log('cms: \n', cms);
 
-        const file = new File([cms.data], 'binaryDecrypt.temp');
+        const file = new Blob([cms.data]);
         console.log('file: ', file);
         const reader = new FileReader();
         reader.onload = (event) => sindejs.parseBinaryFile(event.target.result, resolve, reject);
@@ -464,7 +464,7 @@ export default class sindejs {
         return response.arrayBuffer();
       }).then((arraybuffer) => {
         console.log('loadPublicKey arraybuffer: ', arraybuffer);
-        const _temp = new File([arraybuffer], "tempPublicKey.gpg");
+        const _temp = new Blob([arraybuffer]);
         
         let reader = new FileReader();
         reader.onload = event => {

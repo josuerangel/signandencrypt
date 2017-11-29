@@ -1,4 +1,6 @@
 import React from 'react'
+import 'babel-polyfill';
+import 'whatwg-fetch';
 import ModalEncrypt from '../modal-encrypt/index.jsx';
 
 function renderModalEncrypt(options, container, callback){

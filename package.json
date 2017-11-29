@@ -7,7 +7,9 @@
   "license": "MIT",
   "scripts": {
     "start": "webpack-dev-server --inline --port 3000",
-    "build": "webpack --env=prod --progress --profile --colors --config=webpack.config.prod.js",
+    "build": "npm run buildcomplete & npm run buildnoconflict",
+    "buildcomplete": "webpack --env=prod --progress --profile --colors --config=webpack.config.prod.js",
+    "buildnoconflict": "webpack --env=prod --progress --profile --colors --config=webpack.config.prod.noconflict.js",
     "buildpkijs": "npm rebuild pvutils asn1js pkijs",
     "checkwebpack": "webpack --progress --display-error-details",
     "rbpkijs": "npm run buildpkijs | npm run checkwebpack"

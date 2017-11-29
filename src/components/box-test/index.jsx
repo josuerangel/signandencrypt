@@ -238,7 +238,7 @@ class BoxTest extends React.Component {
             FileSaver.saveAs(blobfile, this.dataFileForDecrypt.name);
           } else {
             console.log('inside national');
-            let file = new File([plaintext.data], this.dataFileForDecrypt.name, {type: typeFile});
+            let file = new Blob([plaintext.data]);
             console.log('file: ', file);
             const reader = new FileReader();
             reader.onload = (event) => this.parseFile(event.target.result);

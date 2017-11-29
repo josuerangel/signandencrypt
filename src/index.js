@@ -43,7 +43,7 @@ const _sp = {
   key : {
     label: 'Llave privada (Archivo .key de FIEL)',
     help: 'Archivo con extensión .key',
-    running: 'Validando archivo .key . . ."',
+    running: 'Validando archivo .key . . . ',
     success: 'Llave válida',
     error: 'Ocurrió un error al validar la llave',
     notCurrent: 'Llave no vigente',
@@ -169,7 +169,7 @@ const _en = {
   key: {
     label: 'Private key (FILE .key file)',
     help: 'File with extension .key',
-    running: 'Validating .key file . . . "',
+    running: 'Validating .key file . . . ',
     success: 'Valid key',
     error: 'An error occurred when validating the key',
     notCurrent: 'Key not valid',

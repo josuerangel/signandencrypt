@@ -1,4 +1,5 @@
 import React from 'react'
+// import 'babel-polyfill';
 import ModalDecrypt from '../modal-decrypt/index.jsx';
 
 function renderModalDecrypt(options, container, callback){
