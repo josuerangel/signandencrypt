@@ -270,7 +270,7 @@ const options = {
 	},
 	language: _sp,
 	fiel: {
-		show: true,
+		show: false,
 		certificate: {
 			CA: [
 				'http://localhost:8080/apps2012/vendors/sindejs/AC0_SAT.cer',
